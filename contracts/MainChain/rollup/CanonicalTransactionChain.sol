@@ -25,6 +25,12 @@ contract CanonicalTransactionChain is Lib_AddressResolver {
         uint256 _timestamp
     );
 
+    event SideGasParamsUpdated(
+        uint256 sideGasDiscountDivisor,
+        uint256 enqueueGasCost,
+        uint256 enqueueSideGasPrepaid
+    );
+
     constructor(
         address _libAddressManager,
         uint256 _maxTransactionGasLimit,
@@ -36,6 +42,24 @@ contract CanonicalTransactionChain is Lib_AddressResolver {
         enqueueGasCost = _enqueueGasCost;
         enqueueSideGasPrepaid = _sideGasDiscountDivisor * _enqueueGasCost;
     }
+
+    modifier onlyBurnAdmin() {
+        require(msg.sender == libAddressManager.owner(), "Only callable by the Burn Admin.");
+        _;
+    }
+
+    function setGasParams(uint256 _sideGasDiscountDivisor, uint256 _enqueueGasCost)
+        external
+        onlyBurnAdmin
+    {
+        enqueueGasCost = _enqueueGasCost;
+        sideGasDiscountDivisor = _sideGasDiscountDivisor;
+        // See the comment in enqueue() for the rationale behind this formula.
+        enqueueSideGasPrepaid = _sideGasDiscountDivisor * _enqueueGasCost;
+
+        emit SideGasParamsUpdated(sideGasDiscountDivisor, enqueueGasCost, enqueueSideGasPrepaid);
+    }
+
 
     function getQueueElement(uint256 _index)
         public
@@ -72,7 +96,7 @@ contract CanonicalTransactionChain is Lib_AddressResolver {
         //     uint256 gasToConsume = (_gasLimit - enqueueSideGasPrepaid) / sideGasDiscountDivisor;
         //     uint256 startingGas = gasleft();
 
-        //     require(startingGas > gasToConsume, "Insufficient gas for L2 rate limiting burn.");
+        //     require(startingGas > gasToConsume, "Insufficient gas for side rate limiting burn.");
 
         //     uint256 i;
         //     while (startingGas - gasleft() < gasToConsume) {

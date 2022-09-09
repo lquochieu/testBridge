@@ -17,6 +17,7 @@
     "hardhat": "^2.9.6"
   },
   "dependencies": {
+    "@chainlink/contracts": "^0.4.1",
     "@ethersproject/abstract-provider": "^5.7.0",
     "@ethersproject/abstract-signer": "^5.7.0",
     "@ethersproject/bytes": "^5.7.0",

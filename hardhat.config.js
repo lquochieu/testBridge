@@ -16,7 +16,7 @@ const GOERLI_URL =
 const PRIVATE_KEY =
   "c7394a27bea46ecb7cb9ee208cd21f50ae357496f6b301fc2f08144ec1b2b7c9";
 module.exports = {
-  solidity: "0.8.1",
+  solidity: "0.8.4",
   defaultNetwork: "bscTestnet",
   networks: {
     bscTestnet: {

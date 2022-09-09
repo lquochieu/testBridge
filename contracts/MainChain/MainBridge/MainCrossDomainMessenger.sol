@@ -11,7 +11,7 @@ import {Lib_CrossDomainUtils} from "../../libraries/bridge/Lib_CrossDomainUtils.
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
-import {ICanonicalTransactionChain} from "../rollup/ICanonicalTransactionChain.sol";
+import {ICanonicalTransactionChain} from "../../interfaces/MainChain/rollup/ICanonicalTransactionChain.sol";
 
 contract MainCrossDomainMessenger is
     OwnableUpgradeable,
@@ -138,11 +138,7 @@ contract MainCrossDomainMessenger is
         bytes memory _message,
         uint256 _messageNonce,
         SideMessageInclusionProof memory _proof
-    )
-        public
-        // SideMessageInclusionProof memory _proof
-        onlyOwner
-    {
+    ) public nonReentrant whenNotPaused onlyOwner {
         bytes memory xDomainCalldata = Lib_CrossDomainUtils
             .encodeXDomainCalldata(_target, _sender, _message, _messageNonce);
 
@@ -254,10 +250,7 @@ contract MainCrossDomainMessenger is
     function _verifyStorageProof(
         bytes memory _xDomainCalldata,
         SideMessageInclusionProof memory _proof
-    ) internal view returns (bool) 
-    {
-        
-    }
+    ) internal view returns (bool) {}
 
     function _sendXDomainMessage(
         address _canonicalTransactionChain,

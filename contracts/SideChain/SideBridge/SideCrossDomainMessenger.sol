@@ -1,15 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import {AddressAliasHelper} from "../../standards/AddressAliasHelper.sol";
 import {Lib_CrossDomainUtils} from "../../libraries/bridge/Lib_CrossDomainUtils.sol";
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
 import {Lib_AddressManager} from "../../libraries/resolver/Lib_AddressManager.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
-import {IOVM_SideToMessagePasser} from "../predploys/IOVM_SideToMainMessagePasser.sol";
+import {IOVM_SideToMessagePasser} from "../../interfaces/SideChain/predeploys/IOVM_SideToMainMessagePasser.sol";
 
-contract SideCrossDomainMessenger is Ownable, Lib_AddressResolver {
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+
+contract SideCrossDomainMessenger is
+    Lib_AddressResolver,
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
     mapping(bytes32 => bool) public relayedMessages;
     mapping(bytes32 => bool) public successfulMessages;
     mapping(bytes32 => bool) public sentMessages;
@@ -28,7 +36,9 @@ contract SideCrossDomainMessenger is Ownable, Lib_AddressResolver {
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
-    constructor(address _mainCrossDomainMessenger) Lib_AddressResolver(address(0)) {
+    constructor(address _mainCrossDomainMessenger)
+        Lib_AddressResolver(address(0))
+    {
         mainCrossDomainMessenger = _mainCrossDomainMessenger;
     }
 
@@ -53,20 +63,23 @@ contract SideCrossDomainMessenger is Ownable, Lib_AddressResolver {
         bytes memory _message,
         uint32 _gasLimit
     ) public {
-
-
         bytes memory xDomainCalldata = Lib_CrossDomainUtils
             .encodeXDomainCalldata(_target, msg.sender, _message, messageNonce);
 
         require(!sentMessages[keccak256(xDomainCalldata)], "Message was sent!");
-        
+
         sentMessages[keccak256(xDomainCalldata)] = true;
 
-        IOVM_SideToMessagePasser(
-            resolve("OVMSideToMainMessagePasser")
-        ).passMessageToMainChain(xDomainCalldata);
+        IOVM_SideToMessagePasser(resolve("OVMSideToMainMessagePasser"))
+            .passMessageToMainChain(xDomainCalldata);
 
-        emit SentMessage(_target, msg.sender, _message, messageNonce, _gasLimit);
+        emit SentMessage(
+            _target,
+            msg.sender,
+            _message,
+            messageNonce,
+            _gasLimit
+        );
 
         messageNonce += 1;
     }
@@ -76,13 +89,11 @@ contract SideCrossDomainMessenger is Ownable, Lib_AddressResolver {
         address _sender,
         bytes memory _message,
         uint256 _messageNonce
-    ) public onlyOwner {
-
-        // require(
-        //     AddressAliasHelper.undoL1ToL2Alias(msg.sender) ==
-        //         mainCrossDomainMessenger,
-        //     "Provided message could not be verified."
-        // );
+    ) public nonReentrant whenNotPaused onlyOwner {
+        require(
+            msg.sender == resolve("SideTransactor"),
+            "Provided message could not be verified."
+        );
 
         bytes memory xDomainCalldata = Lib_CrossDomainUtils
             .encodeXDomainCalldata(_target, _sender, _message, _messageNonce);
@@ -128,5 +139,4 @@ contract SideCrossDomainMessenger is Ownable, Lib_AddressResolver {
         // slither-disable-next-line reentrancy-benign
         relayedMessages[relayId] = true;
     }
-
 }

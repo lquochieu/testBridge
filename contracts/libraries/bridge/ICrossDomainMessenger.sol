@@ -2,7 +2,6 @@
 pragma solidity ^0.8.0;
 
 interface ICrossDomainMessenger {
-
     event SentMessage(
         address indexed target,
         address sender,
@@ -12,12 +11,12 @@ interface ICrossDomainMessenger {
     );
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
-    
+
     function xDomainMessageSender() external view returns (address);
 
     function sendMessage(
         address _target,
         bytes calldata _message,
-        uint32 _gasLimit
+        uint256 _gasLimit
     ) external;
 }

@@ -106,7 +106,7 @@ contract MainCrossDomainMessenger is
     function sendMessage(
         address _target,
         bytes memory _message,
-        uint32 _gasLimit
+        uint256 _gasLimit
     ) public {
         require(
             msg.sender == resolve("MainBridge"),
@@ -188,8 +188,8 @@ contract MainCrossDomainMessenger is
         address _sender,
         bytes memory _message,
         uint256 _queueIndex,
-        uint32 _oldGasLimit,
-        uint32 _newGasLimit
+        uint256 _oldGasLimit,
+        uint256 _newGasLimit
     ) public {
         require(
             msg.sender == resolve("MainBridge") || msg.sender == owner(),

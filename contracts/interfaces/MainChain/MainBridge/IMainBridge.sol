@@ -13,27 +13,29 @@ interface IMainBridge {
     function sideNFTBridge() external returns (address);
 
     function depositNFTBridge(
-        address _mainNFT,
-        address _sideNFT,
-        uint256 _tokenId,
-        bytes calldata data
-    ) external;
+        address _mainNFTCollection,
+        address _sideNFTCollection,
+        uint256 _collectionId,
+        uint256 _sideChainId,
+        bytes calldata _data
+    ) external payable;
 
     function depositNFTBridgeTo(
-        address _mainNFT,
-        address _sideNFT,
+        address _mainNFTCollection,
+        address _sideNFTCollection,
         address _to,
-        uint256 _tokenId,
-        bytes calldata data
-    ) external;
+        uint256 _collectionId,
+        uint256 _sideChainId,
+        bytes calldata _data
+    ) external payable;
 
 
     function finalizeNFTWithdrawal(
-        address _mainNFT,
-        address _sideNFT,
+        address _mainNFTCollection,
+        address _sideNFTCollection,
         address _from,
         address _to,
-        uint256 _tokenId,
+        uint256 _collectionId,
         bytes calldata _data
     ) external;
 }

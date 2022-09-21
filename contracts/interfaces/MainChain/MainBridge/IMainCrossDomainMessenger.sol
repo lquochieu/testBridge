@@ -16,8 +16,8 @@ interface IMainCrossDomainMessenger is ICrossDomainMessenger {
         address _target,
         address _sender,
         bytes memory _message,
-        uint256 _messageNonce
-        // SideMessageInclusionProof memory _proof
+        uint256 _messageNonce,
+        SideMessageInclusionProof memory _proof
     ) external;
 
     function replayMessage(
@@ -25,8 +25,8 @@ interface IMainCrossDomainMessenger is ICrossDomainMessenger {
         address _sender,
         bytes memory _message,
         uint256 _queueIndex,
-        uint32 _oldGasLimit,
-        uint32 _newGasLimit
+        uint256 _oldGasLimit,
+        uint256 _newGasLimit
     ) external;
 
 }

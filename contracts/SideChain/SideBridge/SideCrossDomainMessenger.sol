@@ -61,7 +61,7 @@ contract SideCrossDomainMessenger is
     function sendMessage(
         address _target,
         bytes memory _message,
-        uint32 _gasLimit
+        uint256 _gasLimit
     ) public {
         bytes memory xDomainCalldata = Lib_CrossDomainUtils
             .encodeXDomainCalldata(_target, msg.sender, _message, messageNonce);

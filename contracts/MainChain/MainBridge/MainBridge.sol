@@ -1,21 +1,27 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// import { IERC20 } from "OpenZeppelin/openzeppelin-contracts@4.0.0/contracts/token/ERC20/IERC20.sol";
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
 import {IMainNFTCollection} from "../../interfaces/MainChain/Tokens/IMainNFTCollection.sol";
 import {ISideBridge} from "../../interfaces/SideChain/SideBridge/ISideBridge.sol";
+import {IAggregatorV3} from "../../libraries/Oracle/IAggregatorV3.sol";
+import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
 contract MainBridge is Ownable, CrossDomainEnabled {
     address public admin;
     address public sideBridge;
+
+    IAggregatorV3 aggregatorV3;
     uint256 internal UNIQUE_RARITY = 5;
 
     mapping(address => mapping(address => mapping(uint256 => bool)))
         public deposits;
+
+    mapping(uint256 => mapping(address => mapping(address => bool)))
+        public supportsNFTCollections;
 
     struct NFTCollection {
         uint256 collectionRarity;
@@ -32,6 +38,8 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         address _from,
         address _to,
         uint256 _collectionId,
+        uint256 _sideGas,
+        uint256 _chainId,
         bytes _data
     );
 
@@ -48,11 +56,13 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         admin = msg.sender;
     }
 
-    function initialize(address _mainMessenger, address _sideBridge)
-        public
-        onlyOwner
-    {
+    function initialize(
+        address _mainMessenger,
+        address _sideBridge,
+        address _aggregatorV3
+    ) public onlyOwner {
         require(messenger == address(0), "Contract already initialize");
+        aggregatorV3 = IAggregatorV3(_aggregatorV3);
         messenger = _mainMessenger;
         sideBridge = _sideBridge;
     }
@@ -67,20 +77,43 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         _;
     }
 
+    function supportsForNFTCollectionBridge(
+        uint256 _sideChainId,
+        address _mainNFTCollection,
+        address _sideNFTCollection
+    ) public view returns (bool) {
+        return
+            supportsNFTCollections[_sideChainId][_mainNFTCollection][
+                _sideNFTCollection
+            ];
+    }
+
+    function setSupportsForNFTCollectionBridge(
+        bool isSupport,
+        uint256 _sideChainId,
+        address _mainNFTCollection,
+        address _sideNFTCollection
+    ) public onlyOwner {
+        supportsNFTCollections[_sideChainId][_mainNFTCollection][
+            _sideNFTCollection
+        ] = isSupport;
+    }
+
     function depositNFTBridge(
         address _mainNFTCollection,
         address _sideNFTCollection,
         uint256 _collectionId,
-        uint32 _gas,
+        uint256 _sideChainId,
         bytes calldata _data
-    ) external virtual onlyEOA {
+    ) external payable virtual onlyEOA {
         _initialNFTDeposit(
             _mainNFTCollection,
             _sideNFTCollection,
             msg.sender,
             msg.sender,
             _collectionId,
-            _gas,
+            _sideChainId,
+            msg.value,
             _data
         );
     }
@@ -90,16 +123,17 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         address _sideNFTCollection,
         address _to,
         uint256 _collectionId,
-        uint32 _gas,
+        uint256 _sideChainId,
         bytes calldata _data
-    ) external virtual {
+    ) external payable virtual {
         _initialNFTDeposit(
             _mainNFTCollection,
             _sideNFTCollection,
             msg.sender,
             _to,
             _collectionId,
-            _gas,
+            _sideChainId,
+            msg.value,
             _data
         );
     }
@@ -147,7 +181,8 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         address _from,
         address _to,
         uint256 _collectionId,
-        uint32 _sideGas,
+        uint256 _sideChainId,
+        uint256 _sideGas,
         bytes calldata _data
     ) internal {
         IMainNFTCollection mainNFTCollection = IMainNFTCollection(
@@ -160,8 +195,31 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         );
 
         require(
+            supportsForNFTCollectionBridge(
+                _sideChainId,
+                _mainNFTCollection,
+                _sideNFTCollection
+            ),
+            "Can't support NFT SideChain"
+        );
+
+        require(
             !deposits[_mainNFTCollection][_sideNFTCollection][_collectionId],
             " Token was on the bridge"
+        );
+
+        require(
+            _sideGas >=
+                aggregatorV3.getSideGasTransaction(
+                    Lib_DefaultValues.ETH_AggregatorV3,
+                    Lib_DefaultValues.BNB_AggregatorV3
+                ) &&
+                _sideGas <=
+                aggregatorV3.getMaxSideGasTransaction(
+                    Lib_DefaultValues.ETH_AggregatorV3,
+                    Lib_DefaultValues.BNB_AggregatorV3
+                ),
+            "Transaction gas limit error"
         );
 
         //Transfer NFT to MainBridge
@@ -170,6 +228,13 @@ contract MainBridge is Ownable, CrossDomainEnabled {
             msg.sender,
             address(this),
             _collectionId
+        );
+
+        (bool success, ) = owner().call{value: _sideGas}(new bytes(0));
+
+        require(
+            success,
+            "TransferHelper::safeTransferETH: ETH transfer failed"
         );
 
         deposits[_mainNFTCollection][_sideNFTCollection][_collectionId] = true;
@@ -187,8 +252,12 @@ contract MainBridge is Ownable, CrossDomainEnabled {
             .getCollectionExperience(_collectionId);
 
         if (nftCollection.collectionRarity == UNIQUE_RARITY) {
-            nftCollection.collectionRank = mainNFTCollection.getUniqueRank(_collectionId);
-            nftCollection.collectionURL = mainNFTCollection.getCollectionURL(_collectionId);
+            nftCollection.collectionRank = mainNFTCollection.getUniqueRank(
+                _collectionId
+            );
+            nftCollection.collectionURL = mainNFTCollection.getCollectionURL(
+                _collectionId
+            );
         } else {
             nftCollection.collectionRank = 1;
             nftCollection.collectionURL = "";
@@ -212,6 +281,8 @@ contract MainBridge is Ownable, CrossDomainEnabled {
             _from,
             _to,
             _collectionId,
+            _sideGas,
+            _sideChainId,
             _data
         );
     }

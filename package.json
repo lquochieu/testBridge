@@ -24,6 +24,11 @@
     "@ethersproject/transactions": "^5.7.0",
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/contracts-upgradeable": "^4.7.3",
+    "circom": "^0.5.46",
+    "circomlib": "^2.0.5",
+    "fixed-merkle-tree": "git+https://github.com/aswedchain/fixed-merkle-tree.git",
+    "snarkjs": "git+https://github.com/tornadocash-community/snarkjs.git",
+    "websnark": "git+https://github.com/lquochieu/websnark.git",
     "dotenv": "^16.0.1",
     "ethers": "^5.6.8"
   }

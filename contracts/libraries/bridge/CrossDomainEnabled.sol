@@ -35,9 +35,13 @@ contract CrossDomainEnabled {
 
     function sendCrossDomainMessage(
         address _crossDomainTarget,
-        uint32 _gasLimit,
+        uint256 _gasLimit,
         bytes memory _message
     ) internal {
-        getCrossDomainMessenger().sendMessage(_crossDomainTarget, _message, _gasLimit);
+        getCrossDomainMessenger().sendMessage(
+            _crossDomainTarget,
+            _message,
+            _gasLimit
+        );
     }
 }

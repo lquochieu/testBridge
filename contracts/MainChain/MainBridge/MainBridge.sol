@@ -4,13 +4,14 @@ pragma solidity ^0.8.0;
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
 import {IMainNFTCollection} from "../../interfaces/MainChain/Tokens/IMainNFTCollection.sol";
 import {ISideBridge} from "../../interfaces/SideChain/SideBridge/ISideBridge.sol";
-import {IAggregatorV3} from "../../libraries/Oracle/IAggregatorV3.sol";
+import {IAggregatorV3} from "../../interfaces/MainChain/Oracle/IAggregatorV3.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
-contract MainBridge is Ownable, CrossDomainEnabled {
+contract MainBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
     address public admin;
     address public sideBridge;
 
@@ -105,7 +106,7 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         uint256 _collectionId,
         uint256 _sideChainId,
         bytes calldata _data
-    ) external payable virtual onlyEOA {
+    ) external payable virtual onlyEOA nonReentrant {
         _initialNFTDeposit(
             _mainNFTCollection,
             _sideNFTCollection,
@@ -125,7 +126,7 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         uint256 _collectionId,
         uint256 _sideChainId,
         bytes calldata _data
-    ) external payable virtual {
+    ) external payable virtual nonReentrant {
         _initialNFTDeposit(
             _mainNFTCollection,
             _sideNFTCollection,
@@ -211,13 +212,13 @@ contract MainBridge is Ownable, CrossDomainEnabled {
         require(
             _sideGas >=
                 aggregatorV3.getSideGasTransaction(
-                    Lib_DefaultValues.ETH_AggregatorV3,
-                    Lib_DefaultValues.BNB_AggregatorV3
+                    Lib_DefaultValues.ETH_USDT_AggregatorV3_BSC_TESTNET,
+                    Lib_DefaultValues.BNB_USDT_AggregatorV3_BSC_TESTNET
                 ) &&
                 _sideGas <=
                 aggregatorV3.getMaxSideGasTransaction(
-                    Lib_DefaultValues.ETH_AggregatorV3,
-                    Lib_DefaultValues.BNB_AggregatorV3
+                    Lib_DefaultValues.ETH_USDT_AggregatorV3_BSC_TESTNET,
+                    Lib_DefaultValues.BNB_USDT_AggregatorV3_BSC_TESTNET
                 ),
             "Transaction gas limit error"
         );

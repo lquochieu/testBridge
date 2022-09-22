@@ -2,13 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import {ISideNFTCollection} from "../../interfaces/SideChain/Tokens/ISideNFTCollection.sol";
 import {IMainBridge} from "../../interfaces/MainChain/MainBridge/IMainBridge.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
-import {IAggregatorV3} from "../../libraries/Oracle/IAggregatorV3.sol";
+import {IAggregatorV3} from "../../interfaces/SideChain/Oracle/IAggregatorV3.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
-contract SideBridge is Ownable, CrossDomainEnabled {
+contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
     address private admin;
     address private mainNFTBridge;
     uint256 private UNIQUE_RARITY = 5;
@@ -21,6 +22,12 @@ contract SideBridge is Ownable, CrossDomainEnabled {
         uint256 collectionExperience;
         uint256 collectionRank;
         string collectionURL;
+    }
+
+    struct ProofWithdraw {
+        bytes proof;
+        bytes32 root;
+        bytes32 nullifierHash;
     }
 
     mapping(address => mapping(uint256 => bool)) isTransferNFT;
@@ -36,8 +43,8 @@ contract SideBridge is Ownable, CrossDomainEnabled {
     event burnNFTsCompleted(uint256 _collectionId);
 
     event DepositFinalized(
-        address indexed _l1Token,
-        address indexed _l2Token,
+        address indexed mainNFTCollection,
+        address indexed sideNFTCollection,
         address indexed _from,
         address _to,
         NFTCollection _nftCollection,
@@ -45,8 +52,8 @@ contract SideBridge is Ownable, CrossDomainEnabled {
     );
 
     event DepositFailed(
-        address indexed _l1Token,
-        address indexed _l2Token,
+        address indexed mainNFTCollection,
+        address indexed sideNFTCollection,
         address indexed _from,
         address _to,
         uint256 _collectionId,
@@ -54,8 +61,8 @@ contract SideBridge is Ownable, CrossDomainEnabled {
     );
 
     event WithdrawalInitiated(
-        address indexed _l1Token,
-        address indexed _l2Token,
+        address indexed mainNFTCollection,
+        address indexed sideNFTCollection,
         address indexed _from,
         address _to,
         uint256 _collectionId,
@@ -153,11 +160,13 @@ contract SideBridge is Ownable, CrossDomainEnabled {
     }
 
     function withdraw(
+        ProofWithdraw memory _proofData,
         address _sideNFTCollection,
         uint256 _collectionId,
         bytes calldata _data
-    ) external payable virtual {
+    ) external payable virtual nonReentrant {
         _initiateWithdrawal(
+            _proofData,
             _sideNFTCollection,
             msg.sender,
             msg.sender,
@@ -168,12 +177,14 @@ contract SideBridge is Ownable, CrossDomainEnabled {
     }
 
     function withdrawTo(
+        ProofWithdraw memory _proofData,
         address _sideNFTCollection,
         address _to,
         uint256 _collectionId,
         bytes calldata _data
-    ) external payable virtual {
+    ) external payable virtual nonReentrant {
         _initiateWithdrawal(
+            _proofData,
             _sideNFTCollection,
             msg.sender,
             _to,
@@ -184,6 +195,7 @@ contract SideBridge is Ownable, CrossDomainEnabled {
     }
 
     function _initiateWithdrawal(
+        ProofWithdraw memory _proofData,
         address _sideNFTCollection,
         address _from,
         address _to,
@@ -200,19 +212,17 @@ contract SideBridge is Ownable, CrossDomainEnabled {
             "Only Owner can withdraw NFT"
         );
 
-        require(
-            _mainGas >=
-                aggregatorV3.getSideGasTransaction(
-                    Lib_DefaultValues.ETH_AggregatorV3,
-                    Lib_DefaultValues.BNB_AggregatorV3
-                ) &&
-                _mainGas <=
-                aggregatorV3.getMaxSideGasTransaction(
-                    Lib_DefaultValues.ETH_AggregatorV3,
-                    Lib_DefaultValues.BNB_AggregatorV3
-                ),
-            "Transaction gas limit error"
-        );
+        // require(
+        //     _mainGas >=
+        //         aggregatorV3.getSideGasTransaction(
+        //             Lib_DefaultValues.BTC_ETH_AggregatorV3_Goerli_TESTNET
+        //         ) &&
+        //         _mainGas <=
+        //         aggregatorV3.getMaxSideGasTransaction(
+        //             Lib_DefaultValues.BTC_ETH_AggregatorV3_Goerli_TESTNET
+        //         ),
+        //     "Transaction gas limit error"
+        // );
 
         sideNFTCollection.burnNFTCollection(_from, _collectionId);
 

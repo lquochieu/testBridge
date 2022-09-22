@@ -48,14 +48,6 @@ contract MainCrossDomainMessenger is
     mapping(bytes32 => bool) public relayedMessages;
     mapping(bytes32 => bool) public successfulMessages;
 
-    struct SideMessageInclusionProof {
-        bytes32 stateRoot;
-        // Lib_OVMCodec.ChainBatchHeader stateRootBatchHeader;
-        // Lib_OVMCodec.ChainInclusionProof stateRootProof;
-        // bytes stateTrieWitness;
-        // bytes storageTrieWitness;
-    }
-
     /***************
      * Constructor *
      ***************/
@@ -136,18 +128,13 @@ contract MainCrossDomainMessenger is
         address _target,
         address _sender,
         bytes memory _message,
-        uint256 _messageNonce,
-        SideMessageInclusionProof memory _proof
+        uint256 _messageNonce
     ) public nonReentrant whenNotPaused onlyOwner {
         bytes memory xDomainCalldata = Lib_CrossDomainUtils
             .encodeXDomainCalldata(_target, _sender, _message, _messageNonce);
 
         bytes32 xDomainCalldataHash = keccak256(xDomainCalldata);
 
-        require(
-            _verifyXDomainMessage(xDomainCalldata, _proof) == true,
-            "Provided message could not be verified."
-        );
 
         require(
             successfulMessages[xDomainCalldataHash] == false,
@@ -230,27 +217,6 @@ contract MainCrossDomainMessenger is
             _newGasLimit
         );
     }
-
-    function _verifyXDomainMessage(
-        bytes memory _xDomainCalldata,
-        SideMessageInclusionProof memory _proof
-    ) internal view returns (bool) {
-        return (_verifyStateRootProof(_proof) &&
-            _verifyStorageProof(_xDomainCalldata, _proof));
-    }
-
-    function _verifyStateRootProof(SideMessageInclusionProof memory _proof)
-        internal
-        view
-        returns (bool)
-    {
-        return true;
-    }
-
-    function _verifyStorageProof(
-        bytes memory _xDomainCalldata,
-        SideMessageInclusionProof memory _proof
-    ) internal view returns (bool) {}
 
     function _sendXDomainMessage(
         address _canonicalTransactionChain,

@@ -7,6 +7,7 @@ require("@ethersproject/abstract-provider");
 require("@ethersproject/abstract-signer");
 require("@ethersproject/transactions");
 require("@ethersproject/bytes");
+require("@truffle/hdwallet-provider");
 
 const INFURA_URL =
   "https://rinkeby.infura.io/v3/05ef08be7bec4c9eb35821bd02018d19";

@@ -63,6 +63,12 @@ contract SideCrossDomainMessenger is
         bytes memory _message,
         uint256 _gasLimit
     ) public {
+
+        require(
+            msg.sender == resolve("SideBridge"),
+            "Only SideBridge can send message"
+        );
+
         bytes memory xDomainCalldata = Lib_CrossDomainUtils
             .encodeXDomainCalldata(_target, msg.sender, _message, messageNonce);
 

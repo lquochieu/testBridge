@@ -3,17 +3,15 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import {ISideNFTCollection} from "../../interfaces/SideChain/Tokens/ISideNFTCollection.sol";
 import {IMainBridge} from "../../interfaces/MainChain/MainBridge/IMainBridge.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
-import {IAggregatorV3} from "../../interfaces/SideChain/Oracle/IAggregatorV3.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
 contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
-    address private admin;
     address private mainNFTBridge;
     uint256 private UNIQUE_RARITY = 5;
-    IAggregatorV3 aggregatorV3;
 
     struct NFTCollection {
         uint256 collectionRarity;
@@ -30,17 +28,8 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         bytes32 nullifierHash;
     }
 
-    mapping(address => mapping(uint256 => bool)) isTransferNFT;
-    mapping(address => mapping(uint256 => uint256)) transferNFT;
-    mapping(address => mapping(uint256 => address)) transferOwner;
-    mapping(address => mapping(uint256 => uint256)) chainId;
-    mapping(uint256 => mapping(uint256 => string)) transactionHash;
-    mapping(uint256 => bool) public ownerOf;
-    mapping(uint256 => uint256) public NFT;
-
-    event mintCompleted(address account, uint256 tokenId);
-    event returnNFTsCompleted(address from, address to, uint256 tokenId);
-    event burnNFTsCompleted(uint256 _collectionId);
+    mapping(address => mapping(uint256 => bool)) public pendingDepositOwner;
+    mapping(uint256 => NFTCollection) public collections;
 
     event DepositFinalized(
         address indexed mainNFTCollection,
@@ -60,6 +49,8 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         bytes _data
     );
 
+    event ReceiveNFTCompleted(address owner, NFTCollection nftCollection);
+
     event WithdrawalInitiated(
         address indexed mainNFTCollection,
         address indexed sideNFTCollection,
@@ -69,24 +60,28 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         bytes _data
     );
 
-    constructor(
+    constructor() CrossDomainEnabled(address(0)) {}
+
+    function initialize(
         address _sideCrossDomainMessenger,
-        address _mainNFTCollecionBridge
-    ) CrossDomainEnabled(_sideCrossDomainMessenger) {
-        mainNFTBridge = _mainNFTCollecionBridge;
-        admin = msg.sender;
+        address _mainNFTBridge
+    ) public onlyOwner {
+        require(messenger == address(0), "Contract already initialize");
+        messenger = _sideCrossDomainMessenger;
+        mainNFTBridge = _mainNFTBridge;
     }
 
-    function updateAdmin(address newAdmin) external onlyOwner {
-        admin = newAdmin;
-    }
-
-    function getAdminBridge() external view returns (address) {
-        return admin;
+    function updateAdmin(address _newAdmin) external onlyOwner {
+        transferOwnership(_newAdmin);
     }
 
     function getMainNFTBridge() external view returns (address) {
         return mainNFTBridge;
+    }
+
+    modifier onlyEOA() {
+        require(!Address.isContract(msg.sender), "Account not EOA");
+        _;
     }
 
     function finalizeDepositNFT(
@@ -97,35 +92,17 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         NFTCollection memory _nftCollection,
         bytes calldata _data
     ) external virtual onlyFromCrossDomainAccount(mainNFTBridge) {
+        require(
+            msg.sender == messenger || msg.sender == owner(),
+            "Not message from CrossDomainMessage"
+        );
+
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
             _sideNFTCollection
         );
         if (_mainNFTCollection == sideNFTCollection.getMainNFTCollection()) {
-            if (_nftCollection.collectionRarity == UNIQUE_RARITY) {
-                sideNFTCollection.mintUniqueToken(
-                    _to,
-                    _nftCollection.collectionId,
-                    _nftCollection.collectionURL
-                );
-            } else {
-                sideNFTCollection.mintNFTCollection(
-                    _to,
-                    _nftCollection.collectionId
-                );
-                sideNFTCollection.setUniqueRank(
-                    _nftCollection.collectionId,
-                    _nftCollection.collectionRank
-                );
-            }
-
-            sideNFTCollection.addCollectionExperience(
-                _nftCollection.collectionId,
-                _nftCollection.collectionExperience
-            );
-            sideNFTCollection.setRarities(
-                _nftCollection.collectionId,
-                _nftCollection.collectionRarity
-            );
+            pendingDepositOwner[_to][_nftCollection.collectionId] = true;
+            collections[_nftCollection.collectionId] = _nftCollection;
 
             emit DepositFinalized(
                 _mainNFTCollection,
@@ -159,43 +136,88 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         }
     }
 
-    function withdraw(
-        ProofWithdraw memory _proofData,
+    function receiveDepositNFT(
         address _sideNFTCollection,
         uint256 _collectionId,
+        uint256 _fee
+    ) public payable nonReentrant {
+        require(msg.value == _fee, "Not enough fee");
+        require(
+            pendingDepositOwner[msg.sender][_collectionId],
+            "Not in pending owner"
+        );
+
+        ISideNFTCollection sideNFTCollection = ISideNFTCollection(
+            _sideNFTCollection
+        );
+
+        NFTCollection memory nftCollection = collections[_collectionId];
+
+        if (nftCollection.collectionRarity == UNIQUE_RARITY) {
+            sideNFTCollection.mintUniqueToken(
+                msg.sender,
+                nftCollection.collectionId,
+                nftCollection.collectionURL
+            );
+        } else {
+            sideNFTCollection.mintNFTCollection(
+                msg.sender,
+                nftCollection.collectionId
+            );
+            sideNFTCollection.setUniqueRank(
+                nftCollection.collectionId,
+                nftCollection.collectionRank
+            );
+        }
+
+        sideNFTCollection.addCollectionExperience(
+            nftCollection.collectionId,
+            nftCollection.collectionExperience
+        );
+        sideNFTCollection.setRarities(
+            nftCollection.collectionId,
+            nftCollection.collectionRarity
+        );
+
+        delete pendingDepositOwner[msg.sender][_collectionId];
+        
+        emit ReceiveNFTCompleted(msg.sender, nftCollection);
+    }
+
+    function withdraw(
+        address _sideNFTCollection,
+        uint256 _collectionId,
+        uint256 _mainGas,
         bytes calldata _data
-    ) external payable virtual nonReentrant {
+    ) external virtual onlyEOA nonReentrant {
         _initiateWithdrawal(
-            _proofData,
             _sideNFTCollection,
             msg.sender,
             msg.sender,
             _collectionId,
-            msg.value,
+            _mainGas,
             _data
         );
     }
 
     function withdrawTo(
-        ProofWithdraw memory _proofData,
         address _sideNFTCollection,
         address _to,
         uint256 _collectionId,
+        uint256 _mainGas,
         bytes calldata _data
-    ) external payable virtual nonReentrant {
+    ) external virtual onlyEOA nonReentrant {
         _initiateWithdrawal(
-            _proofData,
             _sideNFTCollection,
             msg.sender,
             _to,
             _collectionId,
-            msg.value,
+            _mainGas,
             _data
         );
     }
 
     function _initiateWithdrawal(
-        ProofWithdraw memory _proofData,
         address _sideNFTCollection,
         address _from,
         address _to,
@@ -211,18 +233,6 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
             msg.sender == sideNFTCollection.ownerOf(_collectionId),
             "Only Owner can withdraw NFT"
         );
-
-        // require(
-        //     _mainGas >=
-        //         aggregatorV3.getSideGasTransaction(
-        //             Lib_DefaultValues.BTC_ETH_AggregatorV3_Goerli_TESTNET
-        //         ) &&
-        //         _mainGas <=
-        //         aggregatorV3.getMaxSideGasTransaction(
-        //             Lib_DefaultValues.BTC_ETH_AggregatorV3_Goerli_TESTNET
-        //         ),
-        //     "Transaction gas limit error"
-        // );
 
         sideNFTCollection.burnNFTCollection(_from, _collectionId);
 

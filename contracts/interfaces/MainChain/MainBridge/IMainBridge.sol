@@ -8,9 +8,20 @@ interface IMainBridge {
     
     function updateAdmin(address _newAdmin) external;
 
-    function updateMainBridgeAdmin(address _newAdmin) external;
+    function getSideNFTBridge() external view returns (address);
 
-    function sideNFTBridge() external returns (address);
+    function supportsForNFTCollectionBridge(
+        uint256 _chainId,
+        address _mainNFTCollection,
+        address _sideNFTCollection
+    ) external view returns (bool);
+
+    function setSupportsForNFTCollectionBridge(
+        bool isSupport,
+        uint256 _chainId,
+        address _mainNFTCollection,
+        address _sideNFTCollection
+    ) external;
 
     function depositNFTBridge(
         address _mainNFTCollection,
@@ -37,5 +48,11 @@ interface IMainBridge {
         address _to,
         uint256 _collectionId,
         bytes calldata _data
+    ) external;
+
+    function claimNFTCollection(
+        address _mainNFTCollection,
+        uint256 _collectionId,
+        uint256 _fee
     ) external;
 }

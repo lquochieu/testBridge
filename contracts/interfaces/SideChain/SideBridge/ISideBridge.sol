@@ -5,6 +5,7 @@ pragma solidity ^0.8.0;
 // import { IERC20 } from "OpenZeppelin/openzeppelin-contracts@4.0.0/contracts/token/ERC20/IERC20.sol";
 
 interface ISideBridge {
+    
     struct NFTCollection {
         uint256 collectionRarity;
         uint256 collectionId;
@@ -15,10 +16,6 @@ interface ISideBridge {
     }
 
     function updateAdmin(address _newAdmin) external;
-
-    function getAdminBridge() external view returns (address);
-
-    function mainNFTBridge() external returns (address);
 
     function getMainNFTBridge() external view returns (address);
 
@@ -44,5 +41,11 @@ interface ISideBridge {
         uint256 _tokenId,
         uint256 _mainGas,
         bytes calldata _data
+    ) external;
+
+    function claimNFTCollection(
+        address _sideNFTCollection,
+        uint256 _collectionId,
+        uint256 _fee
     ) external;
 }

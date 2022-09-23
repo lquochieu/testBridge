@@ -3,15 +3,12 @@ pragma solidity ^0.8.0;
 
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
 import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
-import {AddressAliasHelper} from "../../standards/AddressAliasHelper.sol";
 
 contract CanonicalTransactionChain is Lib_AddressResolver {
     Lib_OVMCodec.QueueElement[] queueElements;
 
-    int public bnbPrice;
-    int public ethPrice;
 
-    event TransactionEnqueued(
+    event MainTransactorEvent(
         address indexed sender,
         address indexed target,
         uint256 gasLimit,
@@ -63,7 +60,7 @@ contract CanonicalTransactionChain is Lib_AddressResolver {
         );
 
         uint256 queueIndex = queueElements.length - 1;
-        emit TransactionEnqueued(
+        emit MainTransactorEvent(
             sender,
             _target,
             _gasLimit,

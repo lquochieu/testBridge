@@ -11,7 +11,7 @@ import {Lib_CrossDomainUtils} from "../../libraries/bridge/Lib_CrossDomainUtils.
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
-import {ICanonicalTransactionChain} from "../../interfaces/MainChain/rollup/ICanonicalTransactionChain.sol";
+import {ICanonicalTransactionChain} from "../../interfaces/MainChain/MainBridge/ICanonicalTransactionChain.sol";
 
 contract MainCrossDomainMessenger is
     OwnableUpgradeable,
@@ -26,9 +26,9 @@ contract MainCrossDomainMessenger is
      * Events *
      **********/
 
-    event MessageBlocked(bytes32 indexed _xDomainCalldataHash);
+    event MessageBlocked(bytes32 indexed _xDomainCallDataHash);
 
-    event MessageAllowed(bytes32 indexed _xDomainCalldataHash);
+    event MessageAllowed(bytes32 indexed _xDomainCallDataHash);
 
     event SentMessage(
         address indexed target,
@@ -47,6 +47,7 @@ contract MainCrossDomainMessenger is
     mapping(bytes32 => bool) public blockedMessages;
     mapping(bytes32 => bool) public relayedMessages;
     mapping(bytes32 => bool) public successfulMessages;
+    mapping(bytes32 => bool) public sentMessages;
 
     /***************
      * Constructor *
@@ -85,14 +86,14 @@ contract MainCrossDomainMessenger is
         _pause();
     }
 
-    function blockMessage(bytes32 _xDomainCalldataHash) external onlyOwner {
-        blockedMessages[_xDomainCalldataHash] = true;
-        emit MessageBlocked(_xDomainCalldataHash);
+    function blockMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
+        blockedMessages[_xDomainCallDataHash] = true;
+        emit MessageBlocked(_xDomainCallDataHash);
     }
 
-    function allowMessage(bytes32 _xDomainCalldataHash) external onlyOwner {
-        blockedMessages[_xDomainCalldataHash] = false;
-        emit MessageAllowed(_xDomainCalldataHash);
+    function allowMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
+        blockedMessages[_xDomainCallDataHash] = false;
+        emit MessageAllowed(_xDomainCallDataHash);
     }
 
     function sendMessage(
@@ -113,7 +114,10 @@ contract MainCrossDomainMessenger is
             .getQueueLength();
 
         bytes memory xDomainCallData = Lib_CrossDomainUtils
-            .encodeXDomainCalldata(_target, msg.sender, _message, nonce);
+            .encodeXDomainCallData(_target, msg.sender, _message, nonce);
+
+        require(!sentMessages[keccak256(xDomainCallData)], "Message was sent!");
+        sentMessages[keccak256(xDomainCallData)] = true;
 
         _sendXDomainMessage(
             ovmCanonicalTransactionChain,
@@ -130,19 +134,22 @@ contract MainCrossDomainMessenger is
         bytes memory _message,
         uint256 _messageNonce
     ) public nonReentrant whenNotPaused onlyOwner {
-        bytes memory xDomainCalldata = Lib_CrossDomainUtils
-            .encodeXDomainCalldata(_target, _sender, _message, _messageNonce);
 
-        bytes32 xDomainCalldataHash = keccak256(xDomainCalldata);
+        require(msg.sender == resolve("MainTransactor"), "Invalid sender");
+
+        bytes memory xDomainCallData = Lib_CrossDomainUtils
+            .encodeXDomainCallData(_target, _sender, _message, _messageNonce);
+
+        bytes32 xDomainCallDataHash = keccak256(xDomainCallData);
 
 
         require(
-            successfulMessages[xDomainCalldataHash] == false,
+            successfulMessages[xDomainCallDataHash] == false,
             "Provided message has already been received."
         );
 
         require(
-            blockedMessages[xDomainCalldataHash] == false,
+            blockedMessages[xDomainCallDataHash] == false,
             "Provided message has been blocked."
         );
 
@@ -158,14 +165,14 @@ contract MainCrossDomainMessenger is
         xDomainMsgSender = Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
 
         if (success == true) {
-            successfulMessages[xDomainCalldataHash] = true;
-            emit RelayedMessage(xDomainCalldataHash);
+            successfulMessages[xDomainCallDataHash] = true;
+            emit RelayedMessage(xDomainCallDataHash);
         } else {
-            emit FailedRelayedMessage(xDomainCalldataHash);
+            emit FailedRelayedMessage(xDomainCallDataHash);
         }
 
         bytes32 relayId = keccak256(
-            abi.encodePacked(xDomainCalldata, msg.sender, block.number)
+            abi.encodePacked(xDomainCallData, msg.sender, block.number)
         );
         relayedMessages[relayId] = true;
     }
@@ -191,8 +198,8 @@ contract MainCrossDomainMessenger is
         ).getQueueElement(_queueIndex);
 
         // Compute the calldata that was originally used to send the message.
-        bytes memory xDomainCalldata = Lib_CrossDomainUtils
-            .encodeXDomainCalldata(_target, _sender, _message, _queueIndex);
+        bytes memory xDomainCallData = Lib_CrossDomainUtils
+            .encodeXDomainCallData(_target, _sender, _message, _queueIndex);
 
         // Compute the transactionHash
         bytes32 transactionHash = keccak256(
@@ -200,7 +207,7 @@ contract MainCrossDomainMessenger is
                 resolve("SideTransactor"),
                 resolve("SideCrossDomainMessenger"),
                 _oldGasLimit,
-                xDomainCalldata
+                xDomainCallData
             )
         );
 
@@ -213,7 +220,7 @@ contract MainCrossDomainMessenger is
         // Send the same message but with the new gas limit.
         _sendXDomainMessage(
             canonicalTransactionChain,
-            xDomainCalldata,
+            xDomainCallData,
             _newGasLimit
         );
     }

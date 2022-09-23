@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AddressAliasHelper} from "../../standards/AddressAliasHelper.sol";
 import {Lib_CrossDomainUtils} from "../../libraries/bridge/Lib_CrossDomainUtils.sol";
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
 import {Lib_AddressManager} from "../../libraries/resolver/Lib_AddressManager.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
-import {IOVM_SideToMessagePasser} from "../../interfaces/SideChain/predeploys/IOVM_SideToMainMessagePasser.sol";
 
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -18,13 +16,20 @@ contract SideCrossDomainMessenger is
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
 {
-    mapping(bytes32 => bool) public relayedMessages;
-    mapping(bytes32 => bool) public successfulMessages;
-    mapping(bytes32 => bool) public sentMessages;
     uint256 public messageNonce;
     address internal xDomainMsgSender =
         Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
     address public mainCrossDomainMessenger;
+
+    mapping(bytes32 => bool) public blockedMessages;
+    mapping(bytes32 => bool) public relayedMessages;
+    mapping(bytes32 => bool) public successfulMessages;
+    mapping(bytes32 => bool) public sentMessages;
+
+    event MessageBlocked(bytes32 indexed _xDomainCallDataHash);
+    event MessageAllowed(bytes32 indexed _xDomainCallDataHash);
+
+    event SideTransactorEvent(address indexed target, uint256 gasLimit, bytes data);
 
     event SentMessage(
         address indexed target,
@@ -33,6 +38,7 @@ contract SideCrossDomainMessenger is
         uint256 messageNonce,
         uint256 gasLimit
     );
+
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
@@ -58,26 +64,38 @@ contract SideCrossDomainMessenger is
         return xDomainMsgSender;
     }
 
+    function blockMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
+        blockedMessages[_xDomainCallDataHash] = true;
+        emit MessageBlocked(_xDomainCallDataHash);
+    }
+
+    function allowMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
+        blockedMessages[_xDomainCallDataHash] = false;
+        emit MessageAllowed(_xDomainCallDataHash);
+    }
+
     function sendMessage(
         address _target,
         bytes memory _message,
         uint256 _gasLimit
     ) public {
-
         require(
             msg.sender == resolve("SideBridge"),
             "Only SideBridge can send message"
         );
 
-        bytes memory xDomainCalldata = Lib_CrossDomainUtils
-            .encodeXDomainCalldata(_target, msg.sender, _message, messageNonce);
+        bytes memory xDomainCallData = Lib_CrossDomainUtils
+            .encodeXDomainCallData(_target, msg.sender, _message, messageNonce);
 
-        require(!sentMessages[keccak256(xDomainCalldata)], "Message was sent!");
+        require(!sentMessages[keccak256(xDomainCallData)], "Message was sent!");
 
-        sentMessages[keccak256(xDomainCalldata)] = true;
+        sentMessages[keccak256(xDomainCallData)] = true;
 
-        IOVM_SideToMessagePasser(resolve("OVMSideToMainMessagePasser"))
-            .passMessageToMainChain(xDomainCalldata);
+        emit SideTransactorEvent(
+            resolve("MainCrossDomainMessenger"),
+            _gasLimit,
+            xDomainCallData
+        );
 
         emit SentMessage(
             _target,
@@ -101,23 +119,20 @@ contract SideCrossDomainMessenger is
             "Provided message could not be verified."
         );
 
-        bytes memory xDomainCalldata = Lib_CrossDomainUtils
-            .encodeXDomainCalldata(_target, _sender, _message, _messageNonce);
+        bytes memory xDomainCallData = Lib_CrossDomainUtils
+            .encodeXDomainCallData(_target, _sender, _message, _messageNonce);
 
-        bytes32 xDomainCalldataHash = keccak256(xDomainCalldata);
+        bytes32 xDomainCallDataHash = keccak256(xDomainCallData);
 
         require(
-            successfulMessages[xDomainCalldataHash] == false,
+            successfulMessages[xDomainCallDataHash] == false,
             "Provided message has already been received."
         );
 
-        // Prevent calls to OVM_L2ToL1MessagePasser, which would enable
-        // an attacker to maliciously craft the _message to spoof
-        // a call from any L2 account.
-        if (_target == resolve("OVMSideToMainMessagePasser")) {
-            successfulMessages[xDomainCalldataHash] = true;
-            return;
-        }
+        require(
+            blockedMessages[xDomainCallDataHash] == false,
+            "Provided message has been blocked."
+        );
 
         xDomainMsgSender = _sender;
 
@@ -128,18 +143,18 @@ contract SideCrossDomainMessenger is
 
         if (success == true) {
             // slither-disable-next-line reentrancy-no-eth
-            successfulMessages[xDomainCalldataHash] = true;
+            successfulMessages[xDomainCallDataHash] = true;
             // slither-disable-next-line reentrancy-events
-            emit RelayedMessage(xDomainCalldataHash);
+            emit RelayedMessage(xDomainCallDataHash);
         } else {
             // slither-disable-next-line reentrancy-events
-            emit FailedRelayedMessage(xDomainCalldataHash);
+            emit FailedRelayedMessage(xDomainCallDataHash);
         }
 
         // Store an identifier that can be used to prove that the given message was relayed by some
         // user. Gives us an easy way to pay relayers for their work.
         bytes32 relayId = keccak256(
-            abi.encodePacked(xDomainCalldata, msg.sender, block.number)
+            abi.encodePacked(xDomainCallData, msg.sender, block.number)
         );
 
         // slither-disable-next-line reentrancy-benign

@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 library Lib_CrossDomainUtils {
 
-    function encodeXDomainCalldata(
+    function encodeXDomainCallData(
         address _target,
         address _sender,
         bytes memory _message,

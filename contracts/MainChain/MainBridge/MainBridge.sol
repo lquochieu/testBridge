@@ -11,6 +11,7 @@ import {ISideBridge} from "../../interfaces/SideChain/SideBridge/ISideBridge.sol
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
 contract MainBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
+    
     address private sideNFTBridge;
     uint256 private UNIQUE_RARITY = 5;
 
@@ -50,7 +51,7 @@ contract MainBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         bytes _data
     );
 
-    event WithdrawNFTCompleted(
+    event ClaimNFTCollectionCompleted(
         address owner,
         uint256 collectionId
     );
@@ -175,7 +176,7 @@ contract MainBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         );
     }
 
-    function receiveWithdrawNFT(
+    function claimNFTCollection(
         address _mainNFTCollection,
         uint256 _collectionId,
         uint256 _fee
@@ -196,7 +197,7 @@ contract MainBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
 
         delete pendingWithdrawOwner[msg.sender][_collectionId];
 
-        emit WithdrawNFTCompleted(msg.sender, _collectionId);
+        emit ClaimNFTCollectionCompleted(msg.sender, _collectionId);
     }
 
     function _initialNFTDeposit(

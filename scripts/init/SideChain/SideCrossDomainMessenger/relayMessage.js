@@ -2,8 +2,8 @@ const { ethers } = require("hardhat");
 
 require("dotenv").config();
 
-const mainCrossDomainMessengerContract = require("../../../../artifacts/contracts/MainChain/MainBridge/MainCrossDomainMessenger.sol/MainCrossDomainMessenger.json");
-const sideCrossDomainMessengerContract = require("../../../../artifacts/contracts/SideChain/SideBridge/SideCrossDomainMessenger.sol/SideCrossDomainMessenger.json");
+const MainGateContract = require("../../../../artifacts/contracts/MainChain/MainBridge/MainGate.sol/MainGate.json");
+const SideGateContract = require("../../../../artifacts/contracts/SideChain/SideBridge/SideGate.sol/SideGate.json");
 const sideBridgeContract = require("../../../../artifacts/contracts/SideChain/SideBridge/SideBridge.sol/SideBridge.json");
 
 const adminKey = {
@@ -18,15 +18,15 @@ const goerliProvider = new ethers.providers.InfuraProvider(
 
 const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
 
-const mainCrossDomainMessenger = new ethers.Contract(
+const MainGate = new ethers.Contract(
   process.env.MAIN_CROSS_DOMAIN_MESSENGER,
-  mainCrossDomainMessengerContract.abi,
+  MainGateContract.abi,
   ethers.provider
 );
 
-const sideCrossDomainMessenger = new ethers.Contract(
+const SideGate = new ethers.Contract(
   process.env.SIDE_CROSS_DOMAIN_MESSENGER,
-  sideCrossDomainMessengerContract.abi,
+  SideGateContract.abi,
   goerliProvider
 );
 
@@ -37,11 +37,11 @@ const sideBridge = new ethers.Contract(
 );
 
 const main = async () => {
-  const Rand = await ethers.getContractFactory("SideCrossDomainMessenger");
+  const Rand = await ethers.getContractFactory("SideGate");
   const rd = await Rand.attach(process.env.SIDE_CROSS_DOMAIN_MESSENGER);
   const rdOwner = await rd.connect(owner);
 
-  mainCrossDomainMessenger.on(
+  MainGate.on(
     "SentMessage",
     async (target, sender, message, messageNonce, gasLimit, event) => {
       console.log(`
@@ -52,13 +52,18 @@ const main = async () => {
         - messageNonce = ${messageNonce}
         - gasLimit = ${gasLimit}
         `);
-      const relayMessage = await rdOwner.relayMessage(target, sender, message, messageNonce);
+      const relayMessage = await rdOwner.relayMessage(
+        target,
+        sender,
+        message,
+        messageNonce
+      );
       await relayMessage.wait();
       console.log(1, relayMessage);
     }
   );
 
-  sideCrossDomainMessenger.on("RelayedMessage", (event) => {
+  SideGate.on("RelayedMessage", (event) => {
     console.log("Deposit NFT success!");
   });
 

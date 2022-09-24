@@ -13,7 +13,7 @@ import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
 import {ICanonicalTransactionChain} from "../../interfaces/MainChain/MainBridge/ICanonicalTransactionChain.sol";
 
-contract MainCrossDomainMessenger is
+contract MainGate is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
@@ -31,11 +31,11 @@ contract MainCrossDomainMessenger is
     event MessageAllowed(bytes32 indexed _xDomainCallDataHash);
 
     event SentMessage(
+        uint256 chainId,
         address indexed target,
         address sender,
         bytes message,
-        uint256 messageNonce,
-        uint256 gasLimit
+        uint256 messageNonce
     );
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
@@ -55,10 +55,10 @@ contract MainCrossDomainMessenger is
 
     constructor() Lib_AddressResolver(address(0)) {}
 
-    function initialize(address _libAddressManager) public onlyOwner {
+    function initialize(address _libAddressManager) public initializer {
         require(
             address(libAddressManager) == address(0),
-            "MainCrossDomainMessenger already intialized"
+            "MainGate already intialized"
         );
         libAddressManager = Lib_AddressManager(_libAddressManager);
 
@@ -95,11 +95,10 @@ contract MainCrossDomainMessenger is
         blockedMessages[_xDomainCallDataHash] = false;
         emit MessageAllowed(_xDomainCallDataHash);
     }
-
     function sendMessage(
+        uint256 _chainId,
         address _target,
-        bytes memory _message,
-        uint256 _gasLimit
+        bytes memory _message
     ) public {
         require(
             msg.sender == resolve("MainBridge"),
@@ -114,18 +113,18 @@ contract MainCrossDomainMessenger is
             .getQueueLength();
 
         bytes memory xDomainCallData = Lib_CrossDomainUtils
-            .encodeXDomainCallData(_target, msg.sender, _message, nonce);
+            .encodeXDomainCallData( _target, msg.sender, _message, nonce);
 
         require(!sentMessages[keccak256(xDomainCallData)], "Message was sent!");
         sentMessages[keccak256(xDomainCallData)] = true;
 
         _sendXDomainMessage(
+            _chainId,
             ovmCanonicalTransactionChain,
-            xDomainCallData,
-            _gasLimit
+            xDomainCallData
         );
 
-        emit SentMessage(_target, msg.sender, _message, nonce, _gasLimit);
+        emit SentMessage(_chainId, _target, msg.sender, _message, nonce);
     }
 
     function relayMessage(
@@ -135,13 +134,12 @@ contract MainCrossDomainMessenger is
         uint256 _messageNonce
     ) public nonReentrant whenNotPaused onlyOwner {
 
-        require(msg.sender == resolve("MainTransactor"), "Invalid sender");
+        require(msg.sender == resolveTransactor(Lib_DefaultValues.BSC_CHAIN_ID_TESTNET), "Invalid sender");
 
         bytes memory xDomainCallData = Lib_CrossDomainUtils
             .encodeXDomainCallData(_target, _sender, _message, _messageNonce);
 
         bytes32 xDomainCallDataHash = keccak256(xDomainCallData);
-
 
         require(
             successfulMessages[xDomainCallDataHash] == false,
@@ -151,11 +149,6 @@ contract MainCrossDomainMessenger is
         require(
             blockedMessages[xDomainCallDataHash] == false,
             "Provided message has been blocked."
-        );
-
-        require(
-            _target != resolve("CanonicalTransactionChain"),
-            "Cannot send SideChain -> MainChain messages to Main system contracts."
         );
 
         xDomainMsgSender = _sender;
@@ -178,12 +171,11 @@ contract MainCrossDomainMessenger is
     }
 
     function replayMessage(
+        uint256 _chainId,
         address _target,
         address _sender,
         bytes memory _message,
-        uint256 _queueIndex,
-        uint256 _oldGasLimit,
-        uint256 _newGasLimit
+        uint256 _queueIndex
     ) public {
         require(
             msg.sender == resolve("MainBridge") || msg.sender == owner(),
@@ -204,9 +196,8 @@ contract MainCrossDomainMessenger is
         // Compute the transactionHash
         bytes32 transactionHash = keccak256(
             abi.encode(
-                resolve("SideTransactor"),
-                resolve("SideCrossDomainMessenger"),
-                _oldGasLimit,
+                resolveTransactor(_chainId),
+                resolveGate(_chainId),
                 xDomainCallData
             )
         );
@@ -217,22 +208,21 @@ contract MainCrossDomainMessenger is
             "Provided message has not been enqueued."
         );
 
-        // Send the same message but with the new gas limit.
         _sendXDomainMessage(
+            _chainId,
             canonicalTransactionChain,
-            xDomainCallData,
-            _newGasLimit
+            xDomainCallData
         );
     }
 
     function _sendXDomainMessage(
+        uint256 _chainId,
         address _canonicalTransactionChain,
-        bytes memory _message,
-        uint256 _gasLimit
+        bytes memory _message
     ) internal {
         ICanonicalTransactionChain(_canonicalTransactionChain).enqueue(
-            resolve("SideCrossDomainMessenger"),
-            _gasLimit,
+            _chainId,
+            resolveGate(_chainId),
             _message
         );
     }

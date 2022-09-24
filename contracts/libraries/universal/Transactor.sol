@@ -26,67 +26,48 @@ contract Transactor is Ownable, EIP712 {
     function executeSignature(
         address _target,
         bytes memory _data,
-        bytes memory _signature,
+        uint256 _messageNonce,
         uint256 _deadline,
-        uint256 _gas
+        bytes memory _signature
     ) internal view returns (bool) {
-
         require(block.timestamp < _deadline, "Singed transaction expired!");
         bytes32 digest = _hashTypedDataV4(
             keccak256(
                 abi.encode(
                     keccak256(
-                        "call(address target, bytes data, uint256 _deadline, uint256 gas)"
+                        "call(address sender, address target, bytes data, uint256 messageNonce,  uint256 deadline)"
                     ),
+                    address(this),
                     _target,
-                    _data,
-                    _deadline,
-                    _gas
+                    keccak256(_data),
+                    _messageNonce,
+                    _deadline
                 )
             )
         );
         address signer = ECDSA.recover(digest, _signature);
         require(signer != address(0), "ECDSA: invalid signature");
-        return signer == owner();
+        return Signers[signer];
     }
 
-    function CALL(
+    function claimNFTCollection(
         address _target,
         bytes memory _data,
-        bytes memory _signature,
-        uint256 _deadline
-    ) external payable onlyOwner returns (bool) {
+        uint256 _messageNonce,
+        uint256 _deadline,
+        bytes memory _signature
+    ) external returns (bool) {
         require(
-            executeSignature(_target, _data, _signature, _deadline, 0),
+            executeSignature(
+                _target,
+                _data,
+                _messageNonce,
+                _deadline,
+                _signature
+            ),
             "Invalid signature"
         );
         (bool success, ) = _target.call(_data);
         return success;
-    }
-
-    /**
-     * Sends a DELEGATECALL to a target address.
-     *
-     * @param _target Address to call.
-     * @param _data   Data to send with the call.
-     * @param _signature Signature of owner
-     * @param _gas    Amount of gas to send with the call.
-     *
-     * @return Boolean success value.
-     * @return Bytes data returned by the call.
-     */
-    function DELEGATECALL(
-        address _target,
-        bytes memory _data,
-        bytes memory _signature,
-        uint256 _deadline,
-        uint256 _gas
-    ) external payable onlyOwner returns (bool, bytes memory) {
-        // slither-disable-next-line controlled-delegatecall
-        require(
-            executeSignature(_target, _data, _signature, _deadline, _gas),
-            "Invalid signature"
-        );
-        return _target.delegatecall{gas: _gas}(_data);
     }
 }

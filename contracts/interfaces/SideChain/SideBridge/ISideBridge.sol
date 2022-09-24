@@ -31,7 +31,6 @@ interface ISideBridge {
     function withdraw(
         address _sideNFTCollection,
         uint256 _tokenId,
-        uint256 _mainGas,
         bytes calldata _data
     ) external;
 
@@ -39,7 +38,6 @@ interface ISideBridge {
         address _sideNFTCollection,
         address _to,
         uint256 _tokenId,
-        uint256 _mainGas,
         bytes calldata _data
     ) external;
 

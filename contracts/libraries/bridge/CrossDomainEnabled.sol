@@ -34,14 +34,14 @@ contract CrossDomainEnabled {
     }
 
     function sendCrossDomainMessage(
+        uint256 _chainId,
         address _crossDomainTarget,
-        uint256 _gasLimit,
         bytes memory _message
     ) internal {
         getCrossDomainMessenger().sendMessage(
+            _chainId,
             _crossDomainTarget,
-            _message,
-            _gasLimit
+            _message
         );
     }
 }

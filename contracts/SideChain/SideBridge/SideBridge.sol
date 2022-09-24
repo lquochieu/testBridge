@@ -1,20 +1,25 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {ISideNFTCollection} from "../../interfaces/SideChain/Tokens/ISideNFTCollection.sol";
 import {IMainBridge} from "../../interfaces/MainChain/MainBridge/IMainBridge.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
-contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
-    
+contract SideBridge is
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable,
+    CrossDomainEnabled
+{
     address private mainNFTBridge;
-    uint256 private UNIQUE_RARITY = 5;
 
     struct NFTCollection {
+        uint256 mainChainId;
         uint256 collectionRarity;
         uint256 collectionId;
         uint256 collectionLevel;
@@ -23,14 +28,7 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         string collectionURL;
     }
 
-    struct ProofWithdraw {
-        bytes proof;
-        bytes32 root;
-        bytes32 nullifierHash;
-    }
-
-    mapping(address => mapping(uint256 => bool)) public pendingDepositOwner;
-    mapping(uint256 => NFTCollection) public collections;
+    mapping(uint256 => NFTCollection) private collections;
 
     event DepositFinalized(
         address indexed mainNFTCollection,
@@ -46,11 +44,14 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         address indexed sideNFTCollection,
         address indexed _from,
         address _to,
-        uint256 _collectionId,
+        NFTCollection _nftCollection,
         bytes _data
     );
 
-    event ClaimNFTCollectionCompleted(address owner, NFTCollection nftCollection);
+    event ClaimNFTCollectionCompleted(
+        address owner,
+        NFTCollection nftCollection
+    );
 
     event WithdrawalInitiated(
         address indexed mainNFTCollection,
@@ -63,13 +64,31 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
 
     constructor() CrossDomainEnabled(address(0)) {}
 
-    function initialize(
-        address _sideCrossDomainMessenger,
-        address _mainNFTBridge
-    ) public onlyOwner {
+    function initialize(address _SideGate, address _mainNFTBridge)
+        public
+        initializer
+    {
         require(messenger == address(0), "Contract already initialize");
-        messenger = _sideCrossDomainMessenger;
+        messenger = _SideGate;
         mainNFTBridge = _mainNFTBridge;
+
+        // Initialize upgradable OZ contracts
+        __Context_init_unchained(); // Context is a dependency for both Ownable and Pausable
+        __Ownable_init_unchained();
+        __Pausable_init_unchained();
+        __ReentrancyGuard_init_unchained();
+    }
+
+    /**
+     * Pause relaying.
+     */
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    modifier onlyEOA() {
+        require(!Address.isContract(msg.sender), "Account not EOA");
+        _;
     }
 
     function updateAdmin(address _newAdmin) external onlyOwner {
@@ -80,9 +99,12 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         return mainNFTBridge;
     }
 
-    modifier onlyEOA() {
-        require(!Address.isContract(msg.sender), "Account not EOA");
-        _;
+    function getCollection(uint256 _collectionId)
+        external
+        view
+        returns (NFTCollection memory)
+    {
+        return collections[_collectionId];
     }
 
     function finalizeDepositNFT(
@@ -98,13 +120,16 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
             "Not message from CrossDomainMessage"
         );
 
+        require(tx.origin == _to, "Invalid owner");
+
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
             _sideNFTCollection
         );
         if (_mainNFTCollection == sideNFTCollection.getMainNFTCollection()) {
-            pendingDepositOwner[_to][_nftCollection.collectionId] = true;
             collections[_nftCollection.collectionId] = _nftCollection;
-
+            
+            _claimNFTCollection(_sideNFTCollection, _nftCollection.collectionId);
+            
             emit DepositFinalized(
                 _mainNFTCollection,
                 _sideNFTCollection,
@@ -124,29 +149,27 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
                 _data
             );
 
-            sendCrossDomainMessage(mainNFTBridge, 0, message);
+            sendCrossDomainMessage(
+                _nftCollection.mainChainId,
+                mainNFTBridge,
+                message
+            );
 
             emit DepositFailed(
                 _mainNFTCollection,
                 _sideNFTCollection,
                 _from,
                 _to,
-                _nftCollection.collectionId,
+                _nftCollection,
                 _data
             );
         }
     }
 
-    function claimNFTCollection(
+    function _claimNFTCollection(
         address _sideNFTCollection,
-        uint256 _collectionId,
-        uint256 _fee
-    ) public payable nonReentrant {
-        require(msg.value == _fee, "Not enough fee");
-        require(
-            pendingDepositOwner[msg.sender][_collectionId],
-            "Not in pending owner"
-        );
+        uint256 _collectionId
+    ) internal nonReentrant {
 
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
             _sideNFTCollection
@@ -154,7 +177,7 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
 
         NFTCollection memory nftCollection = collections[_collectionId];
 
-        if (nftCollection.collectionRarity == UNIQUE_RARITY) {
+        if (nftCollection.collectionRarity == Lib_DefaultValues.UNIQUE_RARITY) {
             sideNFTCollection.mintUniqueToken(
                 msg.sender,
                 nftCollection.collectionId,
@@ -180,32 +203,13 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
             nftCollection.collectionRarity
         );
 
-        delete pendingDepositOwner[msg.sender][_collectionId];
-        
         emit ClaimNFTCollectionCompleted(msg.sender, nftCollection);
-    }
-
-    function withdraw(
-        address _sideNFTCollection,
-        uint256 _collectionId,
-        uint256 _mainGas,
-        bytes calldata _data
-    ) external virtual onlyEOA nonReentrant {
-        _initiateWithdrawal(
-            _sideNFTCollection,
-            msg.sender,
-            msg.sender,
-            _collectionId,
-            _mainGas,
-            _data
-        );
     }
 
     function withdrawTo(
         address _sideNFTCollection,
         address _to,
         uint256 _collectionId,
-        uint256 _mainGas,
         bytes calldata _data
     ) external virtual onlyEOA nonReentrant {
         _initiateWithdrawal(
@@ -213,7 +217,6 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
             msg.sender,
             _to,
             _collectionId,
-            _mainGas,
             _data
         );
     }
@@ -223,7 +226,6 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
         address _from,
         address _to,
         uint256 _collectionId,
-        uint256 _mainGas,
         bytes calldata _data
     ) internal {
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
@@ -241,6 +243,7 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
 
         bytes memory message = abi.encodeWithSelector(
             IMainBridge.finalizeNFTWithdrawal.selector,
+            Lib_DefaultValues.GOERLI_CHAIN_ID_TESTNET,
             mainNFTCollecion,
             _sideNFTCollection,
             _from,
@@ -249,7 +252,11 @@ contract SideBridge is Ownable, CrossDomainEnabled, ReentrancyGuard {
             _data
         );
 
-        sendCrossDomainMessage(mainNFTBridge, _mainGas, message);
+        sendCrossDomainMessage(
+            Lib_DefaultValues.BSC_CHAIN_ID_TESTNET,
+            mainNFTBridge,
+            message
+        );
 
         emit WithdrawalInitiated(
             mainNFTCollecion,

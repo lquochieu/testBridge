@@ -5,11 +5,11 @@ interface ISignatureChecker {
 
     function setSigners(address _signer, bool _isSigner) external;
 
-    function executeSignature(
+    function claimNFTCollection(
         address _target,
         bytes memory _data,
         bytes memory _signature,
-        uint256 _deadline,
-        uint256 _gas
-    ) external view returns (address);
+        uint256 _deadline
+    ) external returns (bool);
+    
 }

@@ -1,9 +1,9 @@
-const {ethers} = require("hardhat");
+const { ethers } = require("hardhat");
 
-async function main () {
-    const MainCrossDomainMessengerContract = await ethers.getContractFactory("MainCrossDomainMessenger");
-    const MainCrossDomainMessenger = await MainCrossDomainMessengerContract.deploy();
-    console.log("MainCrossDomainMessenger deployed at: ", MainCrossDomainMessenger.address);
+async function main() {
+  const MainGateContract = await ethers.getContractFactory("MainGate");
+  const MainGate = await MainGateContract.deploy();
+  console.log("MainGate deployed at: ", MainGate.address);
 }
 
 main()
@@ -12,5 +12,3 @@ main()
     console.error(error);
     process.exit(1);
   });
-
-  

@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import {ICrossDomainMessenger} from "../../../libraries/bridge/ICrossDomainMessenger.sol";
 
-interface IMainCrossDomainMessenger is ICrossDomainMessenger {
+interface IMainGate is ICrossDomainMessenger {
     struct SideMessageInclusionProof {
         bytes32 stateRoot;
         // Lib_OVMCodec.ChainBatchHeader stateRootBatchHeader;
@@ -16,17 +16,13 @@ interface IMainCrossDomainMessenger is ICrossDomainMessenger {
         address _target,
         address _sender,
         bytes memory _message,
-        uint256 _messageNonce,
-        SideMessageInclusionProof memory _proof
+        uint256 _messageNonce
     ) external;
 
     function replayMessage(
         address _target,
         address _sender,
         bytes memory _message,
-        uint256 _queueIndex,
-        uint256 _oldGasLimit,
-        uint256 _newGasLimit
+        uint256 _queueIndex
     ) external;
-
 }

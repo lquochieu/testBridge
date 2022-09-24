@@ -58,12 +58,12 @@ contract CanonicalTransactionChain is Lib_AddressResolver {
             })
         );
 
-        uint256 queueIndex = queueElements.length - 1;
+        uint256 messageNonce = queueElements.length;
         emit TransactorEvent(
             sender,
             _target,
             _data,
-            queueIndex,
+            messageNonce,
             block.timestamp
         );
     }

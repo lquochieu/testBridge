@@ -10,12 +10,14 @@ const adminKey = {
 const owner = new ethers.Wallet(adminKey.privateKey, ethers.provider);
 
 const main = async () => {
-  const Rand = await ethers.getContractFactory("MainCrossDomainMessenger");
+  const Rand = await ethers.getContractFactory("MainGate");
   const rd = await Rand.attach(process.env.MAIN_CROSS_DOMAIN_MESSENGER);
   const rdOwner = await rd.connect(owner);
-  
-  const initializeMainCrossDomainMessenger = await rdOwner.initialize(process.env.MAIN_LIB_ADDRESS_MANAGER);
-  await initializeMainCrossDomainMessenger.wait();
+
+  const initializeMainGate = await rdOwner.initialize(
+    process.env.MAIN_LIB_ADDRESS_MANAGER
+  );
+  await initializeMainGate.wait();
   console.log("Lib_AddressManager", await rdOwner.libAddressManager());
 };
 

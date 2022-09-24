@@ -66,13 +66,11 @@ contract MainBridge is
         __ReentrancyGuard_init_unchained();
     }
 
-    function setSideNFTBridge(uint256 _chainId, address _sideBridge)
-        public
-        onlyOwner
-    {
-        sideNFTBridges[_chainId] = _sideBridge;
-    }
 
+    modifier onlyEOA() {
+        require(!Address.isContract(msg.sender), "Account not EOA");
+        _;
+    }
     /**
      * Pause relaying.
      */
@@ -80,6 +78,13 @@ contract MainBridge is
         _pause();
     }
 
+        function setSideNFTBridge(uint256 _chainId, address _sideBridge)
+        public
+        onlyOwner
+    {
+        sideNFTBridges[_chainId] = _sideBridge;
+    }
+    
     function updateAdmin(address _newAdmin) external onlyOwner {
         transferOwnership(_newAdmin);
     }
@@ -90,11 +95,6 @@ contract MainBridge is
         returns (address)
     {
         return sideNFTBridges[_sideChainId];
-    }
-
-    modifier onlyEOA() {
-        require(!Address.isContract(msg.sender), "Account not EOA");
-        _;
     }
 
     function supportsForNFTCollectionBridge(

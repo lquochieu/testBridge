@@ -5,10 +5,17 @@ pragma solidity ^0.8.0;
 // import { IERC20 } from "OpenZeppelin/openzeppelin-contracts@4.0.0/contracts/token/ERC20/IERC20.sol";
 
 interface IMainBridge {
-    
+
+    function pause() external;
+
+    function setSideNFTBridge(uint256 _chainId, address _sideBridge) external;
+
     function updateAdmin(address _newAdmin) external;
 
-    function getSideNFTBridge() external view returns (address);
+    function getSideNFTBridge(uint256 _sideChainId)
+        external
+        view
+        returns (address);
 
     function supportsForNFTCollectionBridge(
         uint256 _chainId,
@@ -23,25 +30,17 @@ interface IMainBridge {
         address _sideNFTCollection
     ) external;
 
-    function depositNFTBridge(
-        address _mainNFTCollection,
-        address _sideNFTCollection,
-        uint256 _collectionId,
+        function depositNFTBridgeTo(
         uint256 _sideChainId,
-        bytes calldata _data
-    ) external payable;
-
-    function depositNFTBridgeTo(
         address _mainNFTCollection,
         address _sideNFTCollection,
         address _to,
         uint256 _collectionId,
-        uint256 _sideChainId,
         bytes calldata _data
-    ) external payable;
-
+    ) external;
 
     function finalizeNFTWithdrawal(
+        uint256 _sideChainId,
         address _mainNFTCollection,
         address _sideNFTCollection,
         address _from,
@@ -50,9 +49,4 @@ interface IMainBridge {
         bytes calldata _data
     ) external;
 
-    function claimNFTCollection(
-        address _mainNFTCollection,
-        uint256 _collectionId,
-        uint256 _fee
-    ) external;
 }

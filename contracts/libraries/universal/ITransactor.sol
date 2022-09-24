@@ -8,8 +8,9 @@ interface ISignatureChecker {
     function claimNFTCollection(
         address _target,
         bytes memory _data,
-        bytes memory _signature,
-        uint256 _deadline
+        uint256 _messageNonce,
+        uint256 _deadline,
+        bytes memory _signature
     ) external returns (bool);
-    
+
 }

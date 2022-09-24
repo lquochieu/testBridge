@@ -79,16 +79,16 @@ contract SideBridge is
         __ReentrancyGuard_init_unchained();
     }
 
+    modifier onlyEOA() {
+        require(!Address.isContract(msg.sender), "Account not EOA");
+        _;
+    }
+    
     /**
      * Pause relaying.
      */
     function pause() external onlyOwner {
         _pause();
-    }
-
-    modifier onlyEOA() {
-        require(!Address.isContract(msg.sender), "Account not EOA");
-        _;
     }
 
     function updateAdmin(address _newAdmin) external onlyOwner {

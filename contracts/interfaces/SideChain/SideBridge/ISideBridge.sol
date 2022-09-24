@@ -15,35 +15,31 @@ interface ISideBridge {
         string collectionURL;
     }
 
+    function pause() external;
+
     function updateAdmin(address _newAdmin) external;
 
     function getMainNFTBridge() external view returns (address);
 
+    function getCollection(uint256 _collectionId)
+        external
+        view
+        returns (NFTCollection memory);
+        
     function finalizeDepositNFT(
         address _mainNFTCollection,
-        address _sideNFTCollectionCollection,
+        address _sideNFTCollection,
         address _from,
         address _to,
         NFTCollection memory _nftCollection,
         bytes calldata _data
     ) external;
 
-    function withdraw(
-        address _sideNFTCollection,
-        uint256 _tokenId,
-        bytes calldata _data
-    ) external;
-
     function withdrawTo(
         address _sideNFTCollection,
         address _to,
-        uint256 _tokenId,
+        uint256 _collectionId,
         bytes calldata _data
     ) external;
-
-    function claimNFTCollection(
-        address _sideNFTCollection,
-        uint256 _collectionId,
-        uint256 _fee
-    ) external;
+    
 }

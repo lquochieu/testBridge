@@ -7,8 +7,6 @@ interface ISideGate is ICrossDomainMessenger {
 
     function pause() external;
 
-    function getMainGate() external view returns (address);
-
     function blockMessage(bytes32 _xDomainCallDataHash) external;
 
     function allowMessage(bytes32 _xDomainCallDataHash) external;

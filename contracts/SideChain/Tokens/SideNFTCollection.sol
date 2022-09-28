@@ -15,7 +15,7 @@ import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 /**
  * @title
  */
-contract NFTCollection is
+contract SideNFTCollection is
     ERC721EnumerableUpgradeable,
     OwnableUpgradeable,
     PausableUpgradeable
@@ -118,11 +118,15 @@ contract NFTCollection is
         sideBridge = _sideBridge;
     }
 
+    function updateMainNFTCollection(address _mainNFTCollection) external onlyOwner {
+        mainCollection = _mainNFTCollection;
+    }
+
     /**
      * @dev Register vault addresses
      * @param _vaultAddress Vault address
      */
-    function registerVault(address _vaultAddress) external onlyOwner {
+    function registerVault(address _vaultAddress) external onlyBridgeAdmin {
         _registeredVaults[_vaultAddress] = true;
     }
 
@@ -149,7 +153,7 @@ contract NFTCollection is
 
     function updateLevelMilestones(uint256[] calldata newMilestones)
         external
-        onlyOwner
+        onlyBridgeAdmin
     {
         levelMilestones = newMilestones;
     }
@@ -260,6 +264,8 @@ contract NFTCollection is
     /**
      * @dev See {IERC721Metadata-tokenURI}.
      */
+
+    
     function tokenURI(uint256 tokenId)
         public
         view
@@ -303,7 +309,7 @@ contract NFTCollection is
 
     mapping(uint256 => uint256) private uniqueRanks;
 
-    function setUniqueRank(uint256 _tokenId, uint256 _rank) external onlyOwner {
+    function setUniqueRank(uint256 _tokenId, uint256 _rank) external onlyBridgeAdmin {
         uniqueRanks[_tokenId] = _rank;
     }
 
@@ -311,7 +317,7 @@ contract NFTCollection is
         return uniqueRanks[_tokenId];
     }
 
-    function setRarities(uint256 _collectionId, uint256 _rarity) external onlyOwner {
+    function setRarities(uint256 _collectionId, uint256 _rarity) external onlyBridgeAdmin {
         _collectionRarities[_collectionId] = _rarity;
     }
 }

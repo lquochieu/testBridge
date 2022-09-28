@@ -25,11 +25,12 @@ const main = async () => {
   const rd = await Rand.attach(process.env.SIDE_BRIDGE);
   const rdReceiver = await rd.connect(receiver);
 
-  const withdrawNFT = await rdReceiver.withdraw(
-    process.env.SIDE_NFT_CORE,
-    0,
-    0,
-    "0x"
+  const withdrawNFT = await rdReceiver.withdrawTo(
+    process.env.SIDE_NFT_COLLECTION,
+    adminKey.publicKey,
+    1,
+    "0x",
+    {gasLimit: BigInt(1e7)}
   );
   await withdrawNFT.wait();
   console.log(1, withdrawNFT);

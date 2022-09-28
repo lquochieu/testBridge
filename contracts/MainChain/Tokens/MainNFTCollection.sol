@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 /**
  * @title
  */
-contract NFTCollection is
+contract MainNFTCollection is
   ERC721EnumerableUpgradeable,
   OwnableUpgradeable,
   PausableUpgradeable

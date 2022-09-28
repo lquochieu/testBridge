@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {Lib_CrossDomainUtils} from "../../libraries/bridge/Lib_CrossDomainUtils.sol";
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
 import {Lib_AddressManager} from "../../libraries/resolver/Lib_AddressManager.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
@@ -11,7 +10,8 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import {ICanonicalTransactionChain} from "../../interfaces/MainChain/MainBridge/ICanonicalTransactionChain.sol";
+import {ISideCanonicalTransactionChain} from "../../interfaces/SideChain/SideBridge/ISideCanonicalTransactionChain.sol";
+import {IMainGate} from "../../interfaces/MainChain/MainBridge/IMainGate.sol";
 
 contract SideGate is
     Lib_AddressResolver,
@@ -19,9 +19,7 @@ contract SideGate is
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
 {
-    address internal xDomainMsgSender =
-        Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
-    address internal mainGate;
+    address internal xDomainMsgSender;
 
     mapping(bytes32 => bool) public blockedMessages;
     mapping(bytes32 => bool) public relayedMessages;
@@ -43,34 +41,23 @@ contract SideGate is
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
-    constructor(address _mainGate) Lib_AddressResolver(address(0)) {
-        mainGate = _mainGate;
-    }
+    /***************
+     * Constructor *
+     ***************/
 
     function initialize(address _libAddressManager) public initializer {
         require(
             address(libAddressManager) == address(0),
-            "SideGate already intialized"
+            "Side already initialized"
         );
-        libAddressManager = Lib_AddressManager(_libAddressManager);
+
         xDomainMsgSender = Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
 
-        // Initialize upgradable OZ contracts
-        __Context_init_unchained(); // Context is a dependency for both Ownable and Pausable
+        __Lib_AddressResolver_init(_libAddressManager);
+        __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
-    }
-
-    /**
-     * Pause relaying.
-     */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function getMainGate() public view returns (address) {
-        return mainGate;
     }
 
     function xDomainMessageSender() public view returns (address) {
@@ -79,6 +66,29 @@ contract SideGate is
             "xDomainMessageSender is not set"
         );
         return xDomainMsgSender;
+    }
+
+    function _encodeRelayMessage(
+        address _target,
+        address _sender,
+        bytes memory _data,
+        uint256 _messageNonce
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodeWithSelector(
+                IMainGate.relayMessage.selector,
+                _target,
+                _sender,
+                _data,
+                _messageNonce
+            );
+    }
+
+    /**
+     * Pause relaying.
+     */
+    function pause() external onlyOwner {
+        _pause();
     }
 
     function blockMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
@@ -91,30 +101,37 @@ contract SideGate is
         emit MessageAllowed(_xDomainCallDataHash);
     }
 
-    function sendMessage(uint256 _chainId, address _target, bytes memory _message) public {
-        
+    function sendMessage(
+        uint256 _chainId,
+        address _target,
+        bytes memory _message
+    ) public whenNotPaused {
         require(
-            msg.sender == resolve("SideBridge"),
+            _msgSender() == resolve("SideBridge"),
             "Only SideBridge can send message"
         );
 
         address ovmCanonicalTransactionChain = resolve(
-            "CanonicalTransactionChain"
+            "SideCanonicalTransactionChain"
         );
 
-        uint40 nonce = ICanonicalTransactionChain(ovmCanonicalTransactionChain)
-            .getQueueLength();
+        uint40 nonce = ISideCanonicalTransactionChain(
+            ovmCanonicalTransactionChain
+        ).getQueueLength();
 
-        bytes memory xDomainCallData = Lib_CrossDomainUtils
-            .encodeXDomainCallData(_target, msg.sender, _message, nonce);
+        bytes memory xDomainCallData = _encodeRelayMessage(_target, _msgSender(), _message, nonce);
 
         require(!sentMessages[keccak256(xDomainCallData)], "Message was sent!");
 
         sentMessages[keccak256(xDomainCallData)] = true;
 
-        _sendXDomainMessage(_chainId, ovmCanonicalTransactionChain, xDomainCallData);
+        _sendXDomainMessage(
+            _chainId,
+            ovmCanonicalTransactionChain,
+            xDomainCallData
+        );
 
-        emit SentMessage(_target, msg.sender, _message, nonce);
+        emit SentMessage(_target, _msgSender(), _message, nonce);
     }
 
     function replayMessage(
@@ -123,23 +140,22 @@ contract SideGate is
         address _sender,
         bytes memory _message,
         uint256 _queueIndex
-    ) public {
-        
+    ) public nonReentrant whenNotPaused {
         require(
-            msg.sender == resolve("MainBridge") || msg.sender == owner(),
-            "Only MainBridge or admin can replay message"
+            _msgSender() == resolve("SideBridge"),
+            "Only SideBridge or admin can replay message"
         );
         // Verify that the message is in the queue:
         address canonicalTransactionChain = resolve(
-            "CanonicalTransactionChain"
+            "SideCanonicalTransactionChain"
         );
-        Lib_OVMCodec.QueueElement memory element = ICanonicalTransactionChain(
-            canonicalTransactionChain
-        ).getQueueElement(_queueIndex);
+        Lib_OVMCodec.QueueElement
+            memory element = ISideCanonicalTransactionChain(
+                canonicalTransactionChain
+            ).getQueueElement(_queueIndex);
 
         // Compute the calldata that was originally used to send the message.
-        bytes memory xDomainCallData = Lib_CrossDomainUtils
-            .encodeXDomainCallData(_target, _sender, _message, _queueIndex);
+        bytes memory xDomainCallData = _encodeRelayMessage(_target, _sender, _message, _queueIndex);
 
         // Compute the transactionHash
         bytes32 transactionHash = keccak256(
@@ -168,15 +184,15 @@ contract SideGate is
         address _sender,
         bytes memory _message,
         uint256 _nonce
-    ) public nonReentrant whenNotPaused onlyOwner {
-        
+    ) public nonReentrant whenNotPaused {
         require(
-            msg.sender == resolveTransactor(Lib_DefaultValues.GOERLI_CHAIN_ID_TESTNET),
+            _msgSender() ==
+                resolve("SideTransactor") ||
+                _msgSender() == owner(),
             "Provided message could not be verified."
         );
 
-        bytes memory xDomainCallData = Lib_CrossDomainUtils
-            .encodeXDomainCallData(_target, _sender, _message, _nonce);
+        bytes memory xDomainCallData = _encodeRelayMessage(_target, _sender, _message, _nonce);
 
         bytes32 xDomainCallDataHash = keccak256(xDomainCallData);
 
@@ -210,7 +226,7 @@ contract SideGate is
         // Store an identifier that can be used to prove that the given message was relayed by some
         // user. Gives us an easy way to pay relayers for their work.
         bytes32 relayId = keccak256(
-            abi.encodePacked(xDomainCallData, msg.sender, block.number)
+            abi.encodePacked(xDomainCallData, _msgSender(), block.number)
         );
 
         // slither-disable-next-line reentrancy-benign
@@ -222,7 +238,7 @@ contract SideGate is
         address _canonicalTransactionChain,
         bytes memory _message
     ) internal {
-        ICanonicalTransactionChain(_canonicalTransactionChain).enqueue(
+        ISideCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
             _chainId,
             resolveGate(_chainId),
             _message

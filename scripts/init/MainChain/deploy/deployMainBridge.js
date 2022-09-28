@@ -1,8 +1,13 @@
-const {ethers} = require("hardhat");
+const {ethers, upgrades} = require("hardhat");
+require("dotenv").config();
 
 async function main () {
-    const mainBridgeContract = await ethers.getContractFactory("MainBridge");
-    const mainBridge = await mainBridgeContract.deploy();
+    const MainBridge = await ethers.getContractFactory("MainBridge");
+    const mainBridge = await upgrades.deployProxy(MainBridge, [
+      process.env.MAIN_GATE
+    ]);
+    
+    await mainBridge.deployed();
     console.log("MainBridge deployed at: ", mainBridge.address);
 }
 

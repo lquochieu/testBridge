@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Address.sol";
+import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -62,28 +62,29 @@ contract SideBridge is
         bytes _data
     );
 
-    constructor() CrossDomainEnabled(address(0)) {}
-
     function initialize(address _SideGate, address _mainNFTBridge)
         public
         initializer
     {
         require(messenger == address(0), "Contract already initialize");
-        messenger = _SideGate;
+
         mainNFTBridge = _mainNFTBridge;
 
-        // Initialize upgradable OZ contracts
-        __Context_init_unchained(); // Context is a dependency for both Ownable and Pausable
+        __CrossDomainEnabled_init(_SideGate);
+        __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
     }
 
     modifier onlyEOA() {
-        require(!Address.isContract(msg.sender), "Account not EOA");
+        require(
+            !AddressUpgradeable.isContract(_msgSender()),
+            "Account not EOA"
+        );
         _;
     }
-    
+
     /**
      * Pause relaying.
      */
@@ -115,21 +116,27 @@ contract SideBridge is
         NFTCollection memory _nftCollection,
         bytes calldata _data
     ) external virtual onlyFromCrossDomainAccount(mainNFTBridge) {
+        // )external   {
         require(
-            msg.sender == messenger || msg.sender == owner(),
+            _msgSender() == messenger || _msgSender() == owner(),
             "Not message from CrossDomainMessage"
         );
 
-        require(tx.origin == _to, "Invalid owner");
+        // require(tx.origin == _to, "Invalid owner");
 
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
             _sideNFTCollection
         );
+
         if (_mainNFTCollection == sideNFTCollection.getMainNFTCollection()) {
             collections[_nftCollection.collectionId] = _nftCollection;
-            
-            _claimNFTCollection(_sideNFTCollection, _nftCollection.collectionId);
-            
+
+            _claimNFTCollection(
+                _to,
+                _sideNFTCollection,
+                _nftCollection.collectionId
+            );
+
             emit DepositFinalized(
                 _mainNFTCollection,
                 _sideNFTCollection,
@@ -166,11 +173,26 @@ contract SideBridge is
         }
     }
 
+    function withdrawTo(
+        address _sideNFTCollection,
+        address _to,
+        uint256 _collectionId,
+        bytes calldata _data
+    ) external virtual onlyEOA nonReentrant whenNotPaused {
+        _initiateWithdrawal(
+            _sideNFTCollection,
+            _msgSender(),
+            _to,
+            _collectionId,
+            _data
+        );
+    }
+
     function _claimNFTCollection(
+        address _to,
         address _sideNFTCollection,
         uint256 _collectionId
-    ) internal nonReentrant {
-
+    ) internal {
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
             _sideNFTCollection
         );
@@ -179,13 +201,13 @@ contract SideBridge is
 
         if (nftCollection.collectionRarity == Lib_DefaultValues.UNIQUE_RARITY) {
             sideNFTCollection.mintUniqueToken(
-                msg.sender,
+                _to,
                 nftCollection.collectionId,
                 nftCollection.collectionURL
             );
         } else {
             sideNFTCollection.mintNFTCollection(
-                msg.sender,
+                _to,
                 nftCollection.collectionId
             );
             sideNFTCollection.setUniqueRank(
@@ -203,22 +225,7 @@ contract SideBridge is
             nftCollection.collectionRarity
         );
 
-        emit ClaimNFTCollectionCompleted(msg.sender, nftCollection);
-    }
-
-    function withdrawTo(
-        address _sideNFTCollection,
-        address _to,
-        uint256 _collectionId,
-        bytes calldata _data
-    ) external virtual onlyEOA nonReentrant {
-        _initiateWithdrawal(
-            _sideNFTCollection,
-            msg.sender,
-            _to,
-            _collectionId,
-            _data
-        );
+        emit ClaimNFTCollectionCompleted(_to, nftCollection);
     }
 
     function _initiateWithdrawal(
@@ -233,11 +240,15 @@ contract SideBridge is
         );
 
         require(
-            msg.sender == sideNFTCollection.ownerOf(_collectionId),
+            _msgSender() == sideNFTCollection.ownerOf(_collectionId),
             "Only Owner can withdraw NFT"
         );
 
+        require(collections[_collectionId].collectionId == _collectionId, "NFTCollection is't deposited from the other chain");
+
         sideNFTCollection.burnNFTCollection(_from, _collectionId);
+
+        delete collections[_collectionId];
 
         address mainNFTCollecion = sideNFTCollection.getMainNFTCollection();
 
@@ -261,7 +272,7 @@ contract SideBridge is
         emit WithdrawalInitiated(
             mainNFTCollecion,
             _sideNFTCollection,
-            msg.sender,
+            _msgSender(),
             _to,
             _collectionId,
             _data

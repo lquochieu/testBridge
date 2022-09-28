@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import { Lib_AddressManager } from "./Lib_AddressManager.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import {Lib_AddressManager} from "./Lib_AddressManager.sol";
 
-abstract contract Lib_AddressResolver {
-
+abstract contract Lib_AddressResolver is Initializable {
+    
     Lib_AddressManager public libAddressManager;
 
-    constructor(address _libAddressManager) {
+    function __Lib_AddressResolver_init(address _libAddressManager)
+        internal
+        onlyInitializing
+    {
         libAddressManager = Lib_AddressManager(_libAddressManager);
     }
 

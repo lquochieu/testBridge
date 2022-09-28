@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 // import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
@@ -20,7 +20,7 @@ contract MainBridge is
     mapping(uint256 => address) private sideNFTBridges;
 
     mapping(uint256 => mapping(address => mapping(address => bool)))
-        public supportsNFTCollections;
+        internal supportsNFTCollections;
 
     struct NFTCollection {
         uint256 chainId;
@@ -33,13 +33,13 @@ contract MainBridge is
     }
 
     event NFTDepositInitiated(
-        address _mainNFTCollection,
-        address _sideNFTCollection,
-        address _from,
-        address _to,
-        uint256 _collectionId,
-        uint256 _chainId,
-        bytes _data
+        address mainNFTCollection,
+        address sideNFTCollection,
+        address from,
+        address to,
+        NFTCollection nftCollection,
+        uint256 chainId,
+        bytes data
     );
 
     event NFTWithdrawalFinalized(
@@ -53,24 +53,24 @@ contract MainBridge is
 
     event ClaimNFTCollectionCompleted(address owner, uint256 collectionId);
 
-    constructor() CrossDomainEnabled(address(0)) {}
-
     function initialize(address _MainGate) public initializer {
         require(messenger == address(0), "Contract already initialize");
-        messenger = _MainGate;
 
-        // Initialize upgradable OZ contracts
-        __Context_init_unchained(); // Context is a dependency for both Ownable and Pausable
+        __CrossDomainEnabled_init(_MainGate);
+        __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
     }
 
-
     modifier onlyEOA() {
-        require(!Address.isContract(msg.sender), "Account not EOA");
+        require(
+            !AddressUpgradeable.isContract(_msgSender()),
+            "Account not EOA"
+        );
         _;
     }
+
     /**
      * Pause relaying.
      */
@@ -78,13 +78,13 @@ contract MainBridge is
         _pause();
     }
 
-        function setSideNFTBridge(uint256 _chainId, address _sideBridge)
+    function setSideNFTBridge(uint256 _chainId, address _sideBridge)
         public
         onlyOwner
     {
         sideNFTBridges[_chainId] = _sideBridge;
     }
-    
+
     function updateAdmin(address _newAdmin) external onlyOwner {
         transferOwnership(_newAdmin);
     }
@@ -126,11 +126,11 @@ contract MainBridge is
         address _to,
         uint256 _collectionId,
         bytes calldata _data
-    ) external virtual onlyEOA nonReentrant {
+    ) external virtual onlyEOA nonReentrant whenNotPaused {
         _initialNFTDeposit(
             _mainNFTCollection,
             _sideNFTCollection,
-            msg.sender,
+            _msgSender(),
             _to,
             _collectionId,
             _sideChainId,
@@ -150,7 +150,7 @@ contract MainBridge is
         // ) external {
 
         require(
-            msg.sender == messenger || msg.sender == owner(),
+            _msgSender() == messenger || _msgSender() == owner(),
             "Not message from CrossDomainMessage"
         );
 
@@ -180,14 +180,14 @@ contract MainBridge is
     function _claimNFTCollection(
         address _mainNFTCollection,
         uint256 _collectionId
-    ) internal nonReentrant {
+    ) internal {
         IMainNFTCollection(_mainNFTCollection).transferFrom(
             address(this),
-            msg.sender,
+            _msgSender(),
             _collectionId
         );
 
-        emit ClaimNFTCollectionCompleted(msg.sender, _collectionId);
+        emit ClaimNFTCollectionCompleted(_msgSender(), _collectionId);
     }
 
     function _initialNFTDeposit(
@@ -204,9 +204,11 @@ contract MainBridge is
         );
 
         require(
-            msg.sender == mainNFTCollection.ownerOf(_collectionId),
+            _msgSender() == mainNFTCollection.ownerOf(_collectionId),
             "Incorect owner"
         );
+
+        
 
         require(
             supportsForNFTCollectionBridge(
@@ -220,7 +222,7 @@ contract MainBridge is
         //Transfer NFT to MainBridge
 
         mainNFTCollection.transferFrom(
-            msg.sender,
+            _msgSender(),
             address(this),
             _collectionId
         );
@@ -251,7 +253,7 @@ contract MainBridge is
             _sideNFTCollection,
             _from,
             _to,
-            _collectionId,
+            nftCollection,
             _sideChainId,
             _data
         );

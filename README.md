@@ -2,10 +2,10 @@
 
 MainChain
 ```
-MainBridge (./contracts/MainChain/MainBridge/MainBridge.sol)
-MainGate (./contracts/MainChain/MainBridge/MainGate.sol)
 Lib_AddressManager (./contracts/libraries/resolver/Lib_AddressManager.sol)
-MainNFTCore (./contracts/MainChain/Tokens/MainNFTCollection.sol)
+MainGate (./contracts/MainChain/MainBridge/MainGate.sol)
+MainBridge (./contracts/MainChain/MainBridge/MainBridge.sol)
+MainNFTCollection (./contracts/MainChain/Tokens/MainNFTCollection.sol)
 CanonicalTransactionChain (./contracts/MainChain/MainBridge/CanonicalTransactionChain.sol)
 Transactor  (./libraries//universal/Transactor.sol)
 ```

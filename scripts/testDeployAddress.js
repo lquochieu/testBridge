@@ -12,8 +12,8 @@ const goerliProvider = new ethers.providers.InfuraProvider(
   "ba63b223746842d89619ef053b179319"
 );
 
-const mainContract = ["MAIN_BRIDGE", "MAIN_CROSS_DOMAIN_MESSENGER", "MAIN_LIB_ADDRESS_MANAGER", "MAIN_NFT_CORE", "CANONICAL_TRANSACTION_CHAIN"];
-const sideContract = ["OVM_SIDE_TO_MAIN_MESSAFE_PASSER", "OVM_DEPLOYER_WHITE_LIST", "SIDE_CROSS_DOMAIN_MESSENGER", "SIDE_LIB_ADDRESS_MANAGER", "SIDE_BRIDGE", "SIDE_NFT_CORE"];
+const mainContract = ["MAIN_LIB_ADDRESS_MANAGER", "MAIN_GATE", "MAIN_BRIDGE", "MAIN_NFT_COLLECTION", "MAIN_CANONICAL_TRANSACTION_CHAIN", "MAIN_TRANSACTOR"];
+const sideContract = ["SIDE_LIB_ADDRESS_MANAGER", "SIDE_GATE", "SIDE_BRIDGE", "SIDE_NFT_COLLECTION", "SIDE_CANONICAL_TRANSACTION_CHAIN", "SIDE_TRANSACTOR"];
 
 const main = async () => {
   // const Token = await ethers.getContractFactory("TokenTQH");
@@ -27,16 +27,18 @@ const main = async () => {
   let deployedMainAddress = 0;
   let deployedSideAddress = 0;
 
+  console.log("BSC testnet: ");
   for (let i =  0; i + mainNonce < mainSize; i++) {
     deployedMainAddress = ethers.utils.getAddress(
-      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + mainNonce})
+      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + 1 + mainNonce})
     );
     console.log(mainContract[i], " = ", deployedMainAddress);
   }
 
+  console.log("Goerli testnet")
   for (let i =  0; i + sideNonce < sideSize; i++) {
     deployedSideAddress = ethers.utils.getAddress(
-      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + sideNonce})
+      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + 1 + sideNonce})
     );
     console.log(sideContract[i], " = ", deployedSideAddress);
   }

@@ -18,14 +18,16 @@ const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 const main = async () => {
   const Rand = await ethers.getContractFactory("MainBridge");
   const rd = await Rand.attach(process.env.MAIN_BRIDGE);
-  const rdReceiver = await rd.connect(receiver);
+  const owner = await rd.connect(receiver);
 
-  const depositNFT = await rdReceiver.depositNFTBridge(
-    process.env.MAIN_NFT_CORE,
-    process.env.SIDE_NFT_CORE,
-    0,
-    0,
-    "0x"
+  const depositNFT = await owner.depositNFTBridgeTo(
+    process.env.GOERLI_CHAIN_ID,
+    process.env.MAIN_NFT_COLLECTION,
+    process.env.SIDE_NFT_COLLECTION,
+    receiverKey.publicKey,
+    99,
+    "0x",
+    {gasLimit: BigInt(1e7)}
   );
   await depositNFT.wait();
   console.log(1, depositNFT);

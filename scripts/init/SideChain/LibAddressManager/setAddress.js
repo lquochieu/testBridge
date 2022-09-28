@@ -14,13 +14,54 @@ const goerliProvider = new ethers.providers.InfuraProvider(
 
 const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
 
+const addressContract = [
+  "SideBridge",
+  "SideCanonicalTransactionChain",
+  "SideGate",
+];
+const envAddressContract = [
+  "SIDE_BRIDGE",
+  "SIDE_CANONICAL_TRANSACTION_CHAIN",
+  "SIDE_GATE",
+];
+
 const main = async () => {
   const Rand = await ethers.getContractFactory("Lib_AddressManager");
   const rd = await Rand.attach(process.env.SIDE_LIB_ADDRESS_MANAGER);
   const rdOwner = await rd.connect(owner);
-  const setAddress = await rdOwner.setAddress("OVMSideToMainMessagePasser", process.env.OVM_SIDE_TO_MAIN_MESSAGE_PASSER);
-  await setAddress.wait();
-  console.log("OVMSideToMainMessagePasser = ", await rdOwner.getAddress("OVMSideToMainMessagePasser"));
+
+  let setAddress;
+  for (let i = 0; i < addressContract.length-2; i++) {
+    setAddress = await rdOwner.setAddress(
+      addressContract[i],
+      process.env[envAddressContract[i]]
+    );
+    await setAddress.wait();
+    console.log(
+      addressContract[i],
+      await rdOwner.getAddress(addressContract[i])
+    );
+  }
+
+  // setAddress = await rdOwner.setGate(
+  //   process.env.BSC_TESTNET_CHAIN_ID,
+  //   process.env.MAIN_GATE
+  // );
+  // await setAddress.wait();
+  // console.log(
+  //   "MAIN_GATE = ",
+  //   await rdOwner.getGateAddress(process.env.BSC_TESTNET_CHAIN_ID)
+  // );
+
+  // setAddress = await rdOwner.setTransactor(
+  //   process.env.BSC_TESTNET_CHAIN_ID,
+  //   process.env.MAIN_TRANSACTOR
+  // );
+  // await setAddress.wait();
+  // console.log(
+  //   "MAIN_TRANSACTOR = ",
+  //   await rdOwner.getTransactorAddress(process.env.BSC_TESTNET_CHAIN_ID)
+  // );
 };
 
 main()

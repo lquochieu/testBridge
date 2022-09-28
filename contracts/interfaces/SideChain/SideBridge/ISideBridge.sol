@@ -7,6 +7,7 @@ pragma solidity ^0.8.0;
 interface ISideBridge {
     
     struct NFTCollection {
+        uint256 mainChainId;
         uint256 collectionRarity;
         uint256 collectionId;
         uint256 collectionLevel;
@@ -25,7 +26,7 @@ interface ISideBridge {
         external
         view
         returns (NFTCollection memory);
-        
+
     function finalizeDepositNFT(
         address _mainNFTCollection,
         address _sideNFTCollection,
@@ -41,5 +42,4 @@ interface ISideBridge {
         uint256 _collectionId,
         bytes calldata _data
     ) external;
-    
 }

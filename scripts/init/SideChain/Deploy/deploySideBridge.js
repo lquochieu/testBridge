@@ -1,11 +1,15 @@
-const {ethers} = require("hardhat");
-
+const {ethers, upgrades} = require("hardhat");
 require("dotenv").config();
 
 async function main () {
-    const sideBridgeContract = await ethers.getContractFactory("SideBridge");
-    const sideBridge = await sideBridgeContract.deploy(process.env.SIDE_CROSS_DOMAIN_MESSENGER, process.env.MAIN_BRIDGE);
-    console.log("sideBridge deployed at: ", sideBridge.address);
+    const SideBridge = await ethers.getContractFactory("SideBridge");
+    const sideBridge = await upgrades.deployProxy(SideBridge, [
+      process.env.SIDE_GATE,
+      process.env.MAIN_BRIDGE
+    ]);
+    
+    await sideBridge.deployed();
+    console.log("SideBridge deployed at: ", sideBridge.address);
 }
 
 main()

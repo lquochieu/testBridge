@@ -12,6 +12,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
+
 /**
  * @title
  */
@@ -22,13 +23,13 @@ contract SideNFTCollection is
 {
     using SafeMath for uint256;
     using StringsUpgradeable for uint256;
-
     using Counters for Counters.Counter;
-    Counters.Counter private _collectionIds;
 
-    address private sideBridge;
-    address private mainCollection;
-    uint256[] private levelMilestones;
+    address internal sideBridge;
+    address internal mainCollection;
+    uint256[] internal levelMilestones;
+
+    Counters.Counter internal _collectionIds;
 
     struct CollectionComponent {
         uint256 helmetTokenId;
@@ -56,17 +57,25 @@ contract SideNFTCollection is
         UNIQUE
     }
 
+    /*╔══════════════════════════════╗
+      ║            EVENTS            ║
+      ╚══════════════════════════════╝*/
+
     event Mint(address indexed account, uint256 collectionId);
     event Burn(address indexed account, uint256 collectionId);
 
-    mapping(uint256 => CollectionComponent) private _collectionComponents;
-    mapping(uint256 => uint256) private _collectionRarities;
-    mapping(address => bool) private _registeredVaults;
-    mapping(uint256 => uint256) private _initialExperience;
-    mapping(uint256 => uint256) private _undistributedExperience;
+    mapping(uint256 => CollectionComponent) internal _collectionComponents;
+    mapping(uint256 => uint256) internal _collectionRarities;
+    mapping(address => bool) internal _registeredVaults;
+    mapping(uint256 => uint256) internal _initialExperience;
+    mapping(uint256 => uint256) internal _undistributedExperience;
 
-    mapping(uint256 => string) private _uniqueNFTdata;
-    mapping(uint256 => bool) private _uniqueIds;
+    mapping(uint256 => string) internal _uniqueNFTdata;
+    mapping(uint256 => bool) internal _uniqueIds;
+
+    /*╔══════════════════════════════╗
+      ║           MODIFIER           ║
+      ╚══════════════════════════════╝*/
 
     modifier onlyRegisteredVault() {
         require(
@@ -83,6 +92,10 @@ contract SideNFTCollection is
         );
         _;
     }
+
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
 
     function initialize(
         address _sideBridge,
@@ -110,6 +123,18 @@ contract SideNFTCollection is
         ];
     }
 
+    /**
+     * Pause relaying.
+     */
+
+    function pauseContract() external onlyOwner {
+        _pause();
+    }
+
+    function unpauseContract() external onlyOwner {
+        _unpause();
+    }
+
     /*╔══════════════════════════════╗
       ║       ADMIN FUNCTIONS        ║
       ╚══════════════════════════════╝*/
@@ -118,7 +143,10 @@ contract SideNFTCollection is
         sideBridge = _sideBridge;
     }
 
-    function updateMainNFTCollection(address _mainNFTCollection) external onlyOwner {
+    function updateMainNFTCollection(address _mainNFTCollection)
+        external
+        onlyOwner
+    {
         mainCollection = _mainNFTCollection;
     }
 
@@ -129,6 +157,10 @@ contract SideNFTCollection is
     function registerVault(address _vaultAddress) external onlyBridgeAdmin {
         _registeredVaults[_vaultAddress] = true;
     }
+
+    /*╔══════════════════════════════╗
+      ║            MINT NFT          ║
+      ╚══════════════════════════════╝*/
 
     /**
      * @dev Mint unique token
@@ -145,9 +177,9 @@ contract SideNFTCollection is
         _uniqueNFTdata[specialTokenId] = _data;
         _uniqueIds[specialTokenId] = true;
         _collectionRarities[specialTokenId] = uint256(Rarity.UNIQUE);
-        
+
         emit Mint(to, specialTokenId);
-        
+
         return specialTokenId;
     }
 
@@ -156,22 +188,6 @@ contract SideNFTCollection is
         onlyBridgeAdmin
     {
         levelMilestones = newMilestones;
-    }
-
-    function pauseContract() external onlyOwner {
-        _pause();
-    }
-
-    function unpauseContract() external onlyOwner {
-        _unpause();
-    }
-
-    function getCollectionURL(uint256 _collectionId)
-        external
-        view
-        returns (string memory)
-    {
-        return _uniqueNFTdata[_collectionId];
     }
 
     function mintNFTCollection(address _to, uint256 _collectionId)
@@ -183,10 +199,15 @@ contract SideNFTCollection is
         emit Mint(_to, _collectionId);
     }
 
-    function burnNFTCollection(address _from, uint256 _collectionId) external onlyBridgeAdmin whenNotPaused {
+    function burnNFTCollection(address _from, uint256 _collectionId)
+        external
+        onlyBridgeAdmin
+        whenNotPaused
+    {
         _burn(_collectionId);
         emit Burn(_from, _collectionId);
     }
+
     /**
      * @dev Function for Vaults: Add experience to undistributed store, waiting for distribution
      * @param _collectionId Token ID of collectionId
@@ -197,6 +218,41 @@ contract SideNFTCollection is
         uint256 _accruedExperience
     ) external onlyRegisteredVault {
         _undistributedExperience[_collectionId] += _accruedExperience;
+    }
+
+    function changeUniqueURL(uint256 _tokenId, string memory _data)
+        external
+        onlyBridgeAdmin
+    {
+        _uniqueNFTdata[_tokenId] = _data;
+    }
+
+    mapping(uint256 => uint256) internal uniqueRanks;
+
+    function setUniqueRank(uint256 _tokenId, uint256 _rank)
+        external
+        onlyBridgeAdmin
+    {
+        uniqueRanks[_tokenId] = _rank;
+    }
+
+    function setRarities(uint256 _collectionId, uint256 _rarity)
+        external
+        onlyBridgeAdmin
+    {
+        _collectionRarities[_collectionId] = _rarity;
+    }
+
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function getCollectionURL(uint256 _collectionId)
+        external
+        view
+        returns (string memory)
+    {
+        return _uniqueNFTdata[_collectionId];
     }
 
     /**
@@ -257,15 +313,10 @@ contract SideNFTCollection is
         return sideBridge;
     }
 
-    /*╔══════════════════════════════╗
-      ║     UPGRADE FUNCTIONS        ║
-      ╚══════════════════════════════╝*/
-
     /**
      * @dev See {IERC721Metadata-tokenURI}.
      */
 
-    
     function tokenURI(uint256 tokenId)
         public
         view
@@ -296,28 +347,7 @@ contract SideNFTCollection is
         return "https://gateway.ipfs.io/ipfs/";
     }
 
-    /*╔══════════════════════════════╗
-      ║     UPGRADE FUNCTIONS 2      ║
-      ╚══════════════════════════════╝*/
-
-    function changeUniqueURL(uint256 _tokenId, string memory _data)
-        external
-        onlyBridgeAdmin
-    {
-        _uniqueNFTdata[_tokenId] = _data;
-    }
-
-    mapping(uint256 => uint256) private uniqueRanks;
-
-    function setUniqueRank(uint256 _tokenId, uint256 _rank) external onlyBridgeAdmin {
-        uniqueRanks[_tokenId] = _rank;
-    }
-
     function getUniqueRank(uint256 _tokenId) external view returns (uint256) {
         return uniqueRanks[_tokenId];
-    }
-
-    function setRarities(uint256 _collectionId, uint256 _rarity) external onlyBridgeAdmin {
-        _collectionRarities[_collectionId] = _rarity;
     }
 }

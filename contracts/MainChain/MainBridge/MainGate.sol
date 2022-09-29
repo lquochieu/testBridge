@@ -12,17 +12,27 @@ import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
 import {IMainCanonicalTransactionChain} from "../../interfaces/MainChain/MainBridge/IMainCanonicalTransactionChain.sol";
 import {ISideGate} from "../../interfaces/SideChain/SideBridge/ISideGate.sol";
+
 contract MainGate is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
     Lib_AddressResolver
 {
+    /**
+     * xDomainMsgSender will change when function relayMessage active,
+     * it will help function onlyCrossDomainAccount check sender
+     */
     address internal xDomainMsgSender;
 
-    /**********
-     * Events *
-     **********/
+    mapping(bytes32 => bool) public blockedMessages;
+    mapping(bytes32 => bool) public relayedMessages;
+    mapping(bytes32 => bool) public successfulMessages;
+    mapping(bytes32 => bool) public sentMessages;
+
+    /*╔══════════════════════════════╗
+      ║            EVENTS            ║
+      ╚══════════════════════════════╝*/
 
     event MessageBlocked(bytes32 indexed _xDomainCallDataHash);
 
@@ -38,18 +48,9 @@ contract MainGate is
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
-    /**********************
-     * Contract Variables *
-     **********************/
-
-    mapping(bytes32 => bool) public blockedMessages;
-    mapping(bytes32 => bool) public relayedMessages;
-    mapping(bytes32 => bool) public successfulMessages;
-    mapping(bytes32 => bool) public sentMessages;
-
-    /***************
-     * Constructor *
-     ***************/
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
 
     function initialize(address _libAddressManager) public initializer {
         require(
@@ -58,31 +59,12 @@ contract MainGate is
         );
 
         xDomainMsgSender = Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
-        
+
         __Lib_AddressResolver_init(_libAddressManager);
-        __Context_init_unchained(); 
+        __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();
-        
-    }
-
-    function xDomainMessageSender() public view returns (address) {
-        require(
-            xDomainMsgSender != Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER,
-            "xDomainMsgSender is not set"
-        );
-        return xDomainMsgSender;
-    }
-
-    function _encodeRelayMessage(address _target, address _sender, bytes memory _data, uint256 _messageNonce) internal pure returns(bytes memory) {
-        return abi.encodeWithSelector(
-            ISideGate.relayMessage.selector,
-            _target,
-            _sender,
-            _data,
-            _messageNonce
-        );
     }
 
     /**
@@ -91,6 +73,14 @@ contract MainGate is
     function pause() external onlyOwner {
         _pause();
     }
+
+    function unpauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║        ADMIN FUNCTIONS       ║
+      ╚══════════════════════════════╝ */
 
     function blockMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
         blockedMessages[_xDomainCallDataHash] = true;
@@ -101,12 +91,43 @@ contract MainGate is
         blockedMessages[_xDomainCallDataHash] = false;
         emit MessageAllowed(_xDomainCallDataHash);
     }
+
+    /*  ╔══════════════════════════════╗
+      ║        ENCODE FUNCTIONS        ║
+      ╚══════════════════════════════╝ */
+
+    function _encodeRelayMessage(
+        address _target,
+        address _sender,
+        bytes memory _data,
+        uint256 _messageNonce
+    ) internal pure returns (bytes memory) {
+        return
+            abi.encodeWithSelector(
+                ISideGate.relayMessage.selector,
+                _target,
+                _sender,
+                _data,
+                _messageNonce
+            );
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║           SEND MESSAGE         ║
+      ╚══════════════════════════════╝ */
+
+    /** After receive info NFT will deposit at MainBridge,
+     * MainBridge will call function sendMessage in MainGate to prepare data for deposit
+     * @dev prepare infor to send message
+     * @param _chainId chainId of SideChain
+     * @param _target address of SideBridge
+     * @param _message message was created by abi.encodeWithSelector of function finalizeDeposit on SideChain
+     */
     function sendMessage(
         uint256 _chainId,
         address _target,
         bytes memory _message
     ) public whenNotPaused {
-
         require(
             _msgSender() == resolve("MainBridge"),
             "Only MainBridge can send message"
@@ -116,12 +137,19 @@ contract MainGate is
             "MainCanonicalTransactionChain"
         );
 
-        uint40 nonce = IMainCanonicalTransactionChain(ovmCanonicalTransactionChain)
-            .getQueueLength();
+        uint40 nonce = IMainCanonicalTransactionChain(
+            ovmCanonicalTransactionChain
+        ).getQueueLength();
 
-        bytes memory xDomainCallData = _encodeRelayMessage( _target, _msgSender(), _message, nonce);
+        bytes memory xDomainCallData = _encodeRelayMessage(
+            _target,
+            _msgSender(),
+            _message,
+            nonce
+        );
 
         require(!sentMessages[keccak256(xDomainCallData)], "Message was sent!");
+
         sentMessages[keccak256(xDomainCallData)] = true;
 
         _sendXDomainMessage(
@@ -133,16 +161,106 @@ contract MainGate is
         emit SentMessage(_chainId, _target, _msgSender(), _message, nonce);
     }
 
+    /**
+     * @dev resend message if it has any problem
+     * @param _queueIndex the blocknumber of transaction failed before
+     * amd the others param also is the param of transaction failed before
+     */
+
+    function replayMessage(
+        uint256 _chainId,
+        address _target,
+        address _sender,
+        bytes memory _message,
+        uint256 _queueIndex
+    ) public nonReentrant whenNotPaused {
+        require(
+            _msgSender() == resolve("MainBridge") || _msgSender() == owner(),
+            "Only MainBridge or admin can replay message"
+        );
+        // Verify that the message is in the queue:
+        address canonicalTransactionChain = resolve(
+            "MainCanonicalTransactionChain"
+        );
+        Lib_OVMCodec.QueueElement
+            memory element = IMainCanonicalTransactionChain(
+                canonicalTransactionChain
+            ).getQueueElement(_queueIndex);
+
+        // Compute the calldata that was originally used to send the message.
+        bytes memory xDomainCallData = _encodeRelayMessage(
+            _target,
+            _sender,
+            _message,
+            _queueIndex
+        );
+
+        // Compute the transactionHash
+        bytes32 transactionHash = keccak256(
+            abi.encode(
+                resolveTransactor(_chainId),
+                resolveGate(_chainId),
+                xDomainCallData
+            )
+        );
+
+        // Now check that the provided message data matches the one in the queue element.
+        require(
+            transactionHash == element.transactionHash,
+            "Provided message has not been enqueued."
+        );
+
+        _sendXDomainMessage(
+            _chainId,
+            canonicalTransactionChain,
+            xDomainCallData
+        );
+    }
+
+    /**
+     * @dev store transaction was sent from MainChain to SideChain
+     * @param _canonicalTransactionChain address of contract will store these transaction
+     * @param _message message of relayMessage function was encodeWithSlectoron SideChain
+     */
+    function _sendXDomainMessage(
+        uint256 _chainId,
+        address _canonicalTransactionChain,
+        bytes memory _message
+    ) internal {
+        IMainCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
+            _chainId,
+            resolveGate(_chainId),
+            _message
+        );
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║           RELAY MESSAGE        ║
+      ╚══════════════════════════════╝ */
+
+    /**
+     * @dev receive and check information receive from SideChain
+     * @param _target address will call message, when receive infor withdraw,
+     * target is MainBridge
+     * @param _message message when withdraw is function finalizeWithdraw of MainBridge
+     * was encodeWithSeclectoron SideChain
+     * @param _messageNonce the number of message was sent by SideChain for MainChain,
+     * it guarantee  a message from SideChain can't be sent many times
+     */
     function relayMessage(
         address _target,
         address _sender,
         bytes memory _message,
         uint256 _messageNonce
     ) public nonReentrant whenNotPaused {
-
         require(msg.sender == resolve("MainTransactor"), "Invalid sender");
 
-        bytes memory xDomainCallData = _encodeRelayMessage(_target, _sender, _message, _messageNonce);
+        bytes memory xDomainCallData = _encodeRelayMessage(
+            _target,
+            _sender,
+            _message,
+            _messageNonce
+        );
 
         bytes32 xDomainCallDataHash = keccak256(xDomainCallData);
 
@@ -174,59 +292,15 @@ contract MainGate is
         relayedMessages[relayId] = true;
     }
 
-    function replayMessage(
-        uint256 _chainId,
-        address _target,
-        address _sender,
-        bytes memory _message,
-        uint256 _queueIndex
-    ) public nonReentrant whenNotPaused {
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function xDomainMessageSender() public view returns (address) {
         require(
-            _msgSender() == resolve("MainBridge") || _msgSender() == owner(),
-            "Only MainBridge or admin can replay message"
+            xDomainMsgSender != Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER,
+            "xDomainMsgSender is not set"
         );
-        // Verify that the message is in the queue:
-        address canonicalTransactionChain = resolve(
-            "MainCanonicalTransactionChain"
-        );
-        Lib_OVMCodec.QueueElement memory element = IMainCanonicalTransactionChain(
-            canonicalTransactionChain
-        ).getQueueElement(_queueIndex);
-
-        // Compute the calldata that was originally used to send the message.
-        bytes memory xDomainCallData = _encodeRelayMessage(_target, _sender, _message, _queueIndex);
-
-        // Compute the transactionHash
-        bytes32 transactionHash = keccak256(
-            abi.encode(
-                resolveTransactor(_chainId),
-                resolveGate(_chainId),
-                xDomainCallData
-            )
-        );
-
-        // Now check that the provided message data matches the one in the queue element.
-        require(
-            transactionHash == element.transactionHash,
-            "Provided message has not been enqueued."
-        );
-
-        _sendXDomainMessage(
-            _chainId,
-            canonicalTransactionChain,
-            xDomainCallData
-        );
-    }
-
-    function _sendXDomainMessage(
-        uint256 _chainId,
-        address _canonicalTransactionChain,
-        bytes memory _message
-    ) internal {
-        IMainCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
-            _chainId,
-            resolveGate(_chainId),
-            _message
-        );
+        return xDomainMsgSender;
     }
 }

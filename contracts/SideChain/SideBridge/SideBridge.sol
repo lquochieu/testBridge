@@ -16,7 +16,13 @@ contract SideBridge is
     ReentrancyGuardUpgradeable,
     CrossDomainEnabled
 {
-    address private mainNFTBridge;
+    address internal mainNFTBridge;
+
+    /**
+     * @param chainId chainId of MainChain
+     * @param collectionRank except for Unique Collections, the others will have rank 1
+     * @param collectionURL exccept for Unique Collections, the others don't have URL
+     */
 
     struct NFTCollection {
         uint256 mainChainId;
@@ -28,7 +34,11 @@ contract SideBridge is
         string collectionURL;
     }
 
-    mapping(uint256 => NFTCollection) private collections;
+    mapping(uint256 => NFTCollection) internal collections;
+
+    /*╔══════════════════════════════╗
+      ║            EVENTS            ║
+      ╚══════════════════════════════╝*/
 
     event DepositFinalized(
         address indexed mainNFTCollection,
@@ -62,6 +72,21 @@ contract SideBridge is
         bytes _data
     );
 
+    /*╔══════════════════════════════╗
+      ║           MODIFIER           ║
+      ╚══════════════════════════════╝*/
+    modifier onlyEOA() {
+        require(
+            !AddressUpgradeable.isContract(_msgSender()),
+            "Account not EOA"
+        );
+        _;
+    }
+
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
+
     function initialize(address _SideGate, address _mainNFTBridge)
         public
         initializer
@@ -77,14 +102,6 @@ contract SideBridge is
         __ReentrancyGuard_init_unchained();
     }
 
-    modifier onlyEOA() {
-        require(
-            !AddressUpgradeable.isContract(_msgSender()),
-            "Account not EOA"
-        );
-        _;
-    }
-
     /**
      * Pause relaying.
      */
@@ -92,22 +109,36 @@ contract SideBridge is
         _pause();
     }
 
+    function unpauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║        ADMIN FUNCTIONS       ║
+      ╚══════════════════════════════╝ */
+
     function updateAdmin(address _newAdmin) external onlyOwner {
         transferOwnership(_newAdmin);
     }
 
-    function getMainNFTBridge() external view returns (address) {
-        return mainNFTBridge;
+    function updateMainBridge(address _mainNFTBridge) external onlyOwner {
+        mainNFTBridge = _mainNFTBridge;
     }
 
-    function getCollection(uint256 _collectionId)
-        external
-        view
-        returns (NFTCollection memory)
-    {
-        return collections[_collectionId];
-    }
+    /*  ╔══════════════════════════════╗
+      ║    Deposit NFT Collection      ║
+      ╚══════════════════════════════╝ */
 
+    /** The function will call by relayMessage function in SideGate contract
+     * onyCrossDomainAccount will check if function was called by relayMessage or not
+     * @dev the final step to deposit NFT from MainChain
+     * @param _mainNFTCollection address of NFT Collection on MainChain
+     * @param _sideNFTCollection address of NFT Collection on SideChain
+     * @param _from address of sender from MainChain
+     * @param _to address of receiver NFT token
+     * @param _nftCollection infor of NFT Collection was deposited on MainChain
+     * @param _data data was sent with NFT Colletion on MainChain
+     */
     function finalizeDepositNFT(
         address _mainNFTCollection,
         address _sideNFTCollection,
@@ -173,21 +204,6 @@ contract SideBridge is
         }
     }
 
-    function withdrawTo(
-        address _sideNFTCollection,
-        address _to,
-        uint256 _collectionId,
-        bytes calldata _data
-    ) external virtual onlyEOA nonReentrant whenNotPaused {
-        _initiateWithdrawal(
-            _sideNFTCollection,
-            _msgSender(),
-            _to,
-            _collectionId,
-            _data
-        );
-    }
-
     function _claimNFTCollection(
         address _to,
         address _sideNFTCollection,
@@ -228,6 +244,28 @@ contract SideBridge is
         emit ClaimNFTCollectionCompleted(_to, nftCollection);
     }
 
+    /*  ╔══════════════════════════════╗
+      ║   Withdraw NFT Collection      ║
+      ╚══════════════════════════════╝ */
+    /**
+     * @dev With NFT Collection from SideChain to MainChain with its collectionId
+     */
+
+    function withdrawTo(
+        address _sideNFTCollection,
+        address _to,
+        uint256 _collectionId,
+        bytes calldata _data
+    ) external virtual onlyEOA nonReentrant whenNotPaused {
+        _initiateWithdrawal(
+            _sideNFTCollection,
+            _msgSender(),
+            _to,
+            _collectionId,
+            _data
+        );
+    }
+
     function _initiateWithdrawal(
         address _sideNFTCollection,
         address _from,
@@ -244,7 +282,10 @@ contract SideBridge is
             "Only Owner can withdraw NFT"
         );
 
-        require(collections[_collectionId].collectionId == _collectionId, "NFTCollection is't deposited from the other chain");
+        require(
+            collections[_collectionId].collectionId == _collectionId,
+            "NFTCollection is't deposited from the other chain"
+        );
 
         sideNFTCollection.burnNFTCollection(_from, _collectionId);
 
@@ -277,5 +318,21 @@ contract SideBridge is
             _collectionId,
             _data
         );
+    }
+
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function getMainNFTBridge() external view returns (address) {
+        return mainNFTBridge;
+    }
+
+    function getCollection(uint256 _collectionId)
+        external
+        view
+        returns (NFTCollection memory)
+    {
+        return collections[_collectionId];
     }
 }

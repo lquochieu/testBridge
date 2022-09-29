@@ -1,6 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.0;
 
+/**
+ * @title Signature
+ * @notice library Signature will verify the signature when user want to claim NFT Collection
+ */
 library Signature {
     function verifySignature(bytes32 message, bytes memory sig)
         internal

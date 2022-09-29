@@ -16,6 +16,10 @@ contract MainCanonicalTransactionChain is
 {
     Lib_OVMCodec.QueueElement[] queueElements;
 
+    /*╔══════════════════════════════╗
+      ║            EVENTS            ║
+      ╚══════════════════════════════╝*/
+
     event TransactorEvent(
         address indexed sender,
         address indexed target,
@@ -23,6 +27,10 @@ contract MainCanonicalTransactionChain is
         uint256 indexed queueIndex,
         uint256 timestamp
     );
+
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
 
     function initialize(address _libAddressManager) public initializer {
         require(
@@ -44,17 +52,20 @@ contract MainCanonicalTransactionChain is
         _pause();
     }
 
-    function getQueueElement(uint256 _index)
-        public
-        view
-        returns (Lib_OVMCodec.QueueElement memory _element)
-    {
-        return queueElements[_index];
+    function unpauseContract() external onlyOwner {
+        _unpause();
     }
 
-    function getQueueLength() public view returns (uint40) {
-        return uint40(queueElements.length);
-    }
+    /*╔══════════════════════════════╗
+      ║            ENQUEUE           ║
+      ╚══════════════════════════════╝*/
+
+    /**
+     * @dev store transaction was sent from MainChain to SideChain
+     * @param _chainId chainId of SideChain
+     * @param _target address of SideGate
+     * @param _data data of of relayMessage function was encodeWithSlector on MainChain
+     */
 
     function enqueue(
         uint256 _chainId,
@@ -90,5 +101,21 @@ contract MainCanonicalTransactionChain is
             queueIndex,
             block.timestamp
         );
+    }
+
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function getQueueElement(uint256 _index)
+        public
+        view
+        returns (Lib_OVMCodec.QueueElement memory _element)
+    {
+        return queueElements[_index];
+    }
+
+    function getQueueLength() public view returns (uint40) {
+        return uint40(queueElements.length);
     }
 }

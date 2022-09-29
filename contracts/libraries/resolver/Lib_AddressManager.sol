@@ -5,13 +5,25 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-contract Lib_AddressManager is OwnableUpgradeable, PausableUpgradeable, ReentrancyGuardUpgradeable {
-    
-    address private deployer;
-    
-    mapping(bytes32 => address) private addresses;
-    mapping(uint256 => address) private gates;
-    mapping(uint256 => address) private transactors;
+/**
+ * @title Lib_AddressManager
+ * @notice Lib_AddressManager is a minimal contract that will store address of these contract on MainChain and SideChain
+ */
+
+contract Lib_AddressManager is
+    OwnableUpgradeable,
+    PausableUpgradeable,
+    ReentrancyGuardUpgradeable
+{
+    address internal deployer;
+
+    mapping(bytes32 => address) internal addresses;
+    mapping(uint256 => address) internal gates;
+    mapping(uint256 => address) internal transactors;
+
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
 
     function initialize() public initializer {
         require(
@@ -27,6 +39,15 @@ contract Lib_AddressManager is OwnableUpgradeable, PausableUpgradeable, Reentran
         __ReentrancyGuard_init_unchained();
     }
 
+    /*  ╔══════════════════════════════╗
+      ║        ADMIN FUNCTIONS       ║
+      ╚══════════════════════════════╝ */
+
+    /**
+     * @dev set address contract by its name
+     * @param _name name of contract
+     * @param _address address of its
+     */
     function setAddress(string memory _name, address _address)
         external
         onlyOwner
@@ -35,16 +56,30 @@ contract Lib_AddressManager is OwnableUpgradeable, PausableUpgradeable, Reentran
         addresses[nameHash] = _address;
     }
 
+    /**
+     * @dev set address contract MainGate/SideGate by its chainId
+     * @param _chainId chainId of MainGate/SideGate
+     * @param _gate address of MainGate/SideGate
+     */
     function setGate(uint256 _chainId, address _gate) external onlyOwner {
         gates[_chainId] = _gate;
     }
 
+    /**
+     * @dev set address contract MainTransactor/SideTransactor by its chainId
+     * @param _chainId chainId of MainTransator/SideTransactor
+     * @param _transactor address of MainTransactor/SideTransactor
+     */
     function setTransactor(uint256 _chainId, address _transactor)
         external
         onlyOwner
     {
         transactors[_chainId] = _transactor;
     }
+
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
 
     function getAddress(string memory _name) external view returns (address) {
         return addresses[_getNameHash(_name)];

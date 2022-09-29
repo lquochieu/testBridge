@@ -95,6 +95,26 @@ const main = async () => {
   const registerVault = await SideNFTCollection.registerVault(process.env.SIDE_BRIDGE);
   await registerVault.wait();
   console.log(registerVault);
+
+    /*
+    Transactor
+  */
+    const RandTransactor = await ethers.getContractFactory(
+      "SideTransactor"
+    );
+    const rdTransactor = await RandTransactor.attach(
+      process.env.SIDE_TRANSACTOR
+    );
+    const rdOwnerTransactor = await rdTransactor.connect(owner);
+
+    const setSigner = await rdOwnerTransactor.setSigners(
+      adminKey.publicKey,
+      true
+    );
+
+    await setSigner.wait();
+
+    console.log(await rdOwnerTransactor.Signers(adminKey.publicKey));
 };
 
 main()

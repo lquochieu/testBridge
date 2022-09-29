@@ -17,10 +17,11 @@ contract MainBridge is
     ReentrancyGuardUpgradeable,
     CrossDomainEnabled
 {
-    mapping(uint256 => address) private sideNFTBridges;
-
-    mapping(uint256 => mapping(address => mapping(address => bool)))
-        internal supportsNFTCollections;
+    /**
+     * @param chainId chainId of SideChain
+     * @param collectionRank except for Unique Collections, the others will have rank 1
+     * @param collectionURL exccept for Unique Collections, the others don't have URL
+     */
 
     struct NFTCollection {
         uint256 chainId;
@@ -31,6 +32,14 @@ contract MainBridge is
         uint256 collectionRank;
         string collectionURL;
     }
+
+    mapping(uint256 => address) internal sideNFTBridges;
+    mapping(uint256 => mapping(address => mapping(address => bool)))
+        internal supportsNFTCollections;
+
+    /*╔══════════════════════════════╗
+      ║            EVENTS            ║
+      ╚══════════════════════════════╝*/
 
     event NFTDepositInitiated(
         address mainNFTCollection,
@@ -53,6 +62,24 @@ contract MainBridge is
 
     event ClaimNFTCollectionCompleted(address owner, uint256 collectionId);
 
+    /*╔══════════════════════════════╗
+      ║           MODIFIER           ║
+      ╚══════════════════════════════╝*/
+    /**
+     * Check msg.sender is contract or user
+     */
+    modifier onlyEOA() {
+        require(
+            !AddressUpgradeable.isContract(_msgSender()),
+            "Account not EOA"
+        );
+        _;
+    }
+
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
+
     function initialize(address _MainGate) public initializer {
         require(messenger == address(0), "Contract already initialize");
 
@@ -63,14 +90,6 @@ contract MainBridge is
         __ReentrancyGuard_init_unchained();
     }
 
-    modifier onlyEOA() {
-        require(
-            !AddressUpgradeable.isContract(_msgSender()),
-            "Account not EOA"
-        );
-        _;
-    }
-
     /**
      * Pause relaying.
      */
@@ -78,34 +97,23 @@ contract MainBridge is
         _pause();
     }
 
-    function setSideNFTBridge(uint256 _chainId, address _sideBridge)
-        public
-        onlyOwner
-    {
-        sideNFTBridges[_chainId] = _sideBridge;
+    function unpauseContract() external onlyOwner {
+        _unpause();
     }
+
+    /*  ╔══════════════════════════════╗
+      ║        ADMIN FUNCTIONS       ║
+      ╚══════════════════════════════╝ */
 
     function updateAdmin(address _newAdmin) external onlyOwner {
         transferOwnership(_newAdmin);
     }
 
-    function getSideNFTBridge(uint256 _sideChainId)
-        external
-        view
-        returns (address)
+    function setSideNFTBridge(uint256 _chainId, address _sideBridge)
+        public
+        onlyOwner
     {
-        return sideNFTBridges[_sideChainId];
-    }
-
-    function supportsForNFTCollectionBridge(
-        uint256 _chainId,
-        address _mainNFTCollection,
-        address _sideNFTCollection
-    ) public view returns (bool) {
-        return
-            supportsNFTCollections[_chainId][_mainNFTCollection][
-                _sideNFTCollection
-            ];
+        sideNFTBridges[_chainId] = _sideBridge;
     }
 
     function setSupportsForNFTCollectionBridge(
@@ -119,6 +127,21 @@ contract MainBridge is
         ] = isSupport;
     }
 
+    /*  ╔══════════════════════════════╗
+      ║    Deposit NFT Collection      ║
+      ╚══════════════════════════════╝ */
+
+    /**
+     * Before depost, please check if contract support for sideChainId
+     * and SideChain support for address of SideNFTCollection
+     * @dev Deposit NFT Collection to the SideChain
+     * @param _sideChainId chainId of network will receive token
+     * @param _mainNFTCollection address of NFT Collection on MainChain
+     * @param _sideNFTCollection address of NFT Collection on SideChain
+     * @param _to address of receiver NFT token on SideChain
+     * @param _collectionId id of NFT Collection will deposit
+     * @param _data data what want to transfer with token
+     */
     function depositNFTBridgeTo(
         uint256 _sideChainId,
         address _mainNFTCollection,
@@ -138,58 +161,6 @@ contract MainBridge is
         );
     }
 
-    function finalizeNFTWithdrawal(
-        uint256 _sideChainId,
-        address _mainNFTCollection,
-        address _sideNFTCollection,
-        address _from,
-        address _to,
-        uint256 _collectionId,
-        bytes calldata _data
-    ) external onlyFromCrossDomainAccount(sideNFTBridges[_sideChainId]) {
-        // ) external {
-
-        require(
-            _msgSender() == messenger || _msgSender() == owner(),
-            "Not message from CrossDomainMessage"
-        );
-
-        require(tx.origin == _to, "Invalid owner");
-
-        require(
-            supportsForNFTCollectionBridge(
-                _sideChainId,
-                _mainNFTCollection,
-                _sideNFTCollection
-            ),
-            "Can't support NFT SideChain"
-        );
-
-        _claimNFTCollection(_mainNFTCollection, _collectionId);
-
-        emit NFTWithdrawalFinalized(
-            _mainNFTCollection,
-            _sideNFTCollection,
-            _from,
-            _to,
-            _collectionId,
-            _data
-        );
-    }
-
-    function _claimNFTCollection(
-        address _mainNFTCollection,
-        uint256 _collectionId
-    ) internal {
-        IMainNFTCollection(_mainNFTCollection).transferFrom(
-            address(this),
-            _msgSender(),
-            _collectionId
-        );
-
-        emit ClaimNFTCollectionCompleted(_msgSender(), _collectionId);
-    }
-
     function _initialNFTDeposit(
         address _mainNFTCollection,
         address _sideNFTCollection,
@@ -207,8 +178,6 @@ contract MainBridge is
             _msgSender() == mainNFTCollection.ownerOf(_collectionId),
             "Incorect owner"
         );
-
-        
 
         require(
             supportsForNFTCollectionBridge(
@@ -259,6 +228,13 @@ contract MainBridge is
         );
     }
 
+    /**
+     * @dev initiate information of NFTCollection will deposit in struct NFTCollection
+     * @param _mainNFTCollection interface of NFTCollection on this chain
+     * @param _collectionId id of NFTCollection
+     * @return Information of NFTCollection will deposit
+     */
+
     function _initialNFTCollectionDepositing(
         IMainNFTCollection _mainNFTCollection,
         uint256 _collectionId
@@ -289,5 +265,89 @@ contract MainBridge is
         }
 
         return nftCollection;
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║   Withdraw NFT Collection      ║
+      ╚══════════════════════════════╝ */
+
+    /** The function will call by relayMessage function in MainGate contract
+     * onyCrossDomainAccount will check if function was called by relayMessage or not
+     * @dev the final step to withdraw NFT on MainChain
+     */
+
+    function finalizeNFTWithdrawal(
+        uint256 _sideChainId,
+        address _mainNFTCollection,
+        address _sideNFTCollection,
+        address _from,
+        address _to,
+        uint256 _collectionId,
+        bytes calldata _data
+    ) external onlyFromCrossDomainAccount(sideNFTBridges[_sideChainId]) {
+        // ) external {
+
+        require(
+            _msgSender() == messenger || _msgSender() == owner(),
+            "Not message from CrossDomainMessage"
+        );
+
+        require(tx.origin == _to, "Invalid owner");
+
+        require(
+            supportsForNFTCollectionBridge(
+                _sideChainId,
+                _mainNFTCollection,
+                _sideNFTCollection
+            ),
+            "Can't support NFT SideChain"
+        );
+
+        _claimNFTCollection(_mainNFTCollection, _collectionId);
+
+        emit NFTWithdrawalFinalized(
+            _mainNFTCollection,
+            _sideNFTCollection,
+            _from,
+            _to,
+            _collectionId,
+            _data
+        );
+    }
+
+    function _claimNFTCollection(
+        address _mainNFTCollection,
+        uint256 _collectionId
+    ) internal {
+        IMainNFTCollection(_mainNFTCollection).transferFrom(
+            address(this),
+            tx.origin,
+            _collectionId
+        );
+
+        emit ClaimNFTCollectionCompleted(tx.origin, _collectionId);
+    }
+
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function getSideNFTBridge(uint256 _sideChainId)
+        external
+        view
+        returns (address)
+    {
+        return sideNFTBridges[_sideChainId];
+    }
+
+    function supportsForNFTCollectionBridge(
+        uint256 _chainId,
+        address _mainNFTCollection,
+        address _sideNFTCollection
+    ) public view returns (bool) {
+        return
+            supportsNFTCollections[_chainId][_mainNFTCollection][
+                _sideNFTCollection
+            ];
     }
 }

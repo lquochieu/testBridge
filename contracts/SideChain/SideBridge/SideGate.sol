@@ -26,6 +26,10 @@ contract SideGate is
     mapping(bytes32 => bool) public successfulMessages;
     mapping(bytes32 => bool) public sentMessages;
 
+    /*╔══════════════════════════════╗
+      ║            EVENTS            ║
+      ╚══════════════════════════════╝*/
+
     event MessageBlocked(bytes32 indexed _xDomainCallDataHash);
     event MessageAllowed(bytes32 indexed _xDomainCallDataHash);
 
@@ -41,9 +45,9 @@ contract SideGate is
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
-    /***************
-     * Constructor *
-     ***************/
+    /*╔══════════════════════════════╗
+      ║          CONSTRUCTOR         ║
+      ╚══════════════════════════════╝*/
 
     function initialize(address _libAddressManager) public initializer {
         require(
@@ -60,13 +64,34 @@ contract SideGate is
         __ReentrancyGuard_init_unchained();
     }
 
-    function xDomainMessageSender() public view returns (address) {
-        require(
-            xDomainMsgSender != Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER,
-            "xDomainMessageSender is not set"
-        );
-        return xDomainMsgSender;
+    /**
+     * Pause relaying.
+     */
+    function pause() external onlyOwner {
+        _pause();
     }
+
+    function unpauseContract() external onlyOwner {
+        _unpause();
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║        ADMIN FUNCTIONS       ║
+      ╚══════════════════════════════╝ */
+
+    function blockMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
+        blockedMessages[_xDomainCallDataHash] = true;
+        emit MessageBlocked(_xDomainCallDataHash);
+    }
+
+    function allowMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
+        blockedMessages[_xDomainCallDataHash] = false;
+        emit MessageAllowed(_xDomainCallDataHash);
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║        ENCODE FUNCTIONS        ║
+      ╚══════════════════════════════╝ */
 
     function _encodeRelayMessage(
         address _target,
@@ -84,23 +109,17 @@ contract SideGate is
             );
     }
 
-    /**
-     * Pause relaying.
+    /*  ╔══════════════════════════════╗
+      ║           SEND MESSAGE         ║
+      ╚══════════════════════════════╝ */
+
+    /** After receive info NFT will withdraw at SidBridge,
+     * SideBridge will call function sendMessage in SideGate to prepare data for withdraw
+     * @dev prepare infor to send message
+     * @param _chainId chainId of MainChain
+     * @param _target address of MainBridge
+     * @param _message message was created by abi.encodeWithSelector of function finalizeWithdraw on MainChain
      */
-    function pause() external onlyOwner {
-        _pause();
-    }
-
-    function blockMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
-        blockedMessages[_xDomainCallDataHash] = true;
-        emit MessageBlocked(_xDomainCallDataHash);
-    }
-
-    function allowMessage(bytes32 _xDomainCallDataHash) external onlyOwner {
-        blockedMessages[_xDomainCallDataHash] = false;
-        emit MessageAllowed(_xDomainCallDataHash);
-    }
-
     function sendMessage(
         uint256 _chainId,
         address _target,
@@ -119,7 +138,12 @@ contract SideGate is
             ovmCanonicalTransactionChain
         ).getQueueLength();
 
-        bytes memory xDomainCallData = _encodeRelayMessage(_target, _msgSender(), _message, nonce);
+        bytes memory xDomainCallData = _encodeRelayMessage(
+            _target,
+            _msgSender(),
+            _message,
+            nonce
+        );
 
         require(!sentMessages[keccak256(xDomainCallData)], "Message was sent!");
 
@@ -133,6 +157,12 @@ contract SideGate is
 
         emit SentMessage(_target, _msgSender(), _message, nonce);
     }
+
+    /**
+     * @dev resend message if it has any problem
+     * @param _queueIndex the blocknumber of transaction failed before
+     * amd the others param also is the param of transaction failed before
+     */
 
     function replayMessage(
         uint256 _chainId,
@@ -155,7 +185,12 @@ contract SideGate is
             ).getQueueElement(_queueIndex);
 
         // Compute the calldata that was originally used to send the message.
-        bytes memory xDomainCallData = _encodeRelayMessage(_target, _sender, _message, _queueIndex);
+        bytes memory xDomainCallData = _encodeRelayMessage(
+            _target,
+            _sender,
+            _message,
+            _queueIndex
+        );
 
         // Compute the transactionHash
         bytes32 transactionHash = keccak256(
@@ -179,6 +214,38 @@ contract SideGate is
         );
     }
 
+    /**
+     * @dev store transaction was sent from MainChain to MainChain
+     * @param _canonicalTransactionChain address of contract will store these transaction
+     * @param _message message of relayMessage function was encodeWithSlectoron MainChain
+     */
+
+    function _sendXDomainMessage(
+        uint256 _chainId,
+        address _canonicalTransactionChain,
+        bytes memory _message
+    ) internal {
+        ISideCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
+            _chainId,
+            resolveGate(_chainId),
+            _message
+        );
+    }
+
+    /*  ╔══════════════════════════════╗
+      ║           RELAY MESSAGE        ║
+      ╚══════════════════════════════╝ */
+
+    /**
+     * @dev receive and check information receive from MainChain
+     * @param _target address will call message, when receive infor withdraw,
+     * target is SideBridge
+     * @param _message message when withdraw is function finalizeDeposit of SideBridge
+     * was encodeWithSeclectoron MainChain
+     * @param _nonce the number of message was sent by MainChain for SideChain,
+     * it guarantee  a message from MainChain can't be sent many times
+     */
+
     function relayMessage(
         address _target,
         address _sender,
@@ -186,13 +253,17 @@ contract SideGate is
         uint256 _nonce
     ) public nonReentrant whenNotPaused {
         require(
-            _msgSender() ==
-                resolve("SideTransactor") ||
+            _msgSender() == resolve("SideTransactor") ||
                 _msgSender() == owner(),
             "Provided message could not be verified."
         );
 
-        bytes memory xDomainCallData = _encodeRelayMessage(_target, _sender, _message, _nonce);
+        bytes memory xDomainCallData = _encodeRelayMessage(
+            _target,
+            _sender,
+            _message,
+            _nonce
+        );
 
         bytes32 xDomainCallDataHash = keccak256(xDomainCallData);
 
@@ -233,15 +304,15 @@ contract SideGate is
         relayedMessages[relayId] = true;
     }
 
-    function _sendXDomainMessage(
-        uint256 _chainId,
-        address _canonicalTransactionChain,
-        bytes memory _message
-    ) internal {
-        ISideCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
-            _chainId,
-            resolveGate(_chainId),
-            _message
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function xDomainMessageSender() public view returns (address) {
+        require(
+            xDomainMsgSender != Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER,
+            "xDomainMessageSender is not set"
         );
+        return xDomainMsgSender;
     }
 }

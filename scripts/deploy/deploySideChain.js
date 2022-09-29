@@ -70,8 +70,6 @@ async function main() {
   */
   const SideTransactor = await ethers.getContractFactory("SideTransactor");
   const sideTransactor = await upgrades.deployProxy(SideTransactor, [
-    "SideTransactor",
-    "1",
     lib_AddressManager.address,
   ]);
   await sideTransactor.deployed();

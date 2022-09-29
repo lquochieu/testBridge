@@ -25,7 +25,7 @@ const main = async () => {
     process.env.MAIN_NFT_COLLECTION,
     process.env.SIDE_NFT_COLLECTION,
     adminKey.publicKey,
-    221,
+    222,
     "0x",
     {gasLimit: BigInt(1e7)}
   );

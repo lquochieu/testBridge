@@ -7,6 +7,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
 import {ECDSAUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
+import {Signature} from "../../libraries/verify/Signature.sol";
 import {ISideGate} from "../../interfaces/SideChain/SideBridge/ISideGate.sol";
 
 /**
@@ -59,8 +60,25 @@ contract SideTransactor is
         uint256 _nonce,
         uint256 _deadline,
         bytes memory _signature
-    ) internal pure returns (bool) {
-        return true;
+    ) internal view returns (bool) {
+        require(block.timestamp < _deadline, "Singed transaction expired!");
+
+        address signer = Signature.verifySignature(
+            keccak256(
+                abi.encodePacked(
+                    _chainId,
+                    _target,
+                    _sender,
+                    _data,
+                    _nonce,
+                    _deadline
+                )
+            ),
+            _signature
+        );
+
+        require(signer != address(0), "ECDSA: invalid signature");
+        return Signers[signer];
     }
 
     function claimNFTCollection(

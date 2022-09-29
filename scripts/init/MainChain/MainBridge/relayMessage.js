@@ -1,4 +1,5 @@
 const { ethers } = require("hardhat");
+const { genSignature } = require("../../../generateSignature.js");
 
 require("dotenv").config();
 
@@ -54,23 +55,36 @@ const main = async () => {
   const rd = await Rand.attach(process.env.MAIN_TRANSACTOR);
   const rdOwner = await rd.connect(owner);
 
-  console.log(SideGate);
   SideGate.on("SentMessage", async (target, sender, message, nonce, event) => {
-    console.log(`
-        SentMessage
-        - target = ${target}
-        - sender = ${sender}
-        - message = ${message}
-        - nonce = ${nonce}
-        `);
-    const claimNFTCollection = await rdOwner.claimNFTCollection(
-      5,
+    let deadline = Math.floor(Date.now() / 1000) + 10000;
+    let signature = await genSignature(
+      97,
       target,
       sender,
-      data,
+      message,
       nonce,
-      0,
-      0,
+      deadline
+    );
+
+    console.log(`
+      SentMessage
+      - chainId = 97
+      - target = ${target}
+      - sender = ${sender}
+      - message = ${message}
+      - nonce = ${nonce}
+      - deadline = ${deadline}
+      - signature = ${signature}
+      `);
+
+    const claimNFTCollection = await rdOwner.claimNFTCollection(
+      97,
+      target,
+      sender,
+      message,
+      nonce,
+      deadline,
+      signature,
       {
         gasLimit: BigInt(1e7),
       }

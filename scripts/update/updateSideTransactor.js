@@ -23,15 +23,15 @@ const ownerETH = new ethers.Wallet(adminKey.privateKey, goerliProvider);
 const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 
 const main = async () => {
-  const SideTransactor = await ethers.getContractFactory("SideTransactor");
-  const sideTransactor = await upgrades.deployProxy(SideTransactor, [
-    "SideTransactor",
-    "1",
-    process.env.SIDE_LIB_ADDRESS_MANAGER,
-  ]);
+  // const SideTransactor = await ethers.getContractFactory("SideTransactor");
+  // const sideTransactor = await upgrades.deployProxy(SideTransactor, [
+  //   "SideTransactor",
+  //   "1",
+  //   process.env.SIDE_LIB_ADDRESS_MANAGER,
+  // ]);
 
-  await sideTransactor.deployed();
-  console.log("SideTransactor deployed at: ", sideTransactor.address);
+  // await sideTransactor.deployed();
+  // console.log("SideTransactor deployed at: ", process.env.SIDE_TRANSACTOR);
   /*
      Set Side Transactor in BSC
    */
@@ -42,7 +42,7 @@ const main = async () => {
   let setAddress;
   setAddress = await rdOwnerBSC.setTransactor(
     process.env.GOERLI_CHAIN_ID,
-    sideTransactor.address
+    process.env.SIDE_TRANSACTOR
   );
   await setAddress.wait();
   console.log(
@@ -59,7 +59,7 @@ const main = async () => {
 
   setAddress = await rdOwnerETH.setAddress(
     "SideTransactor",
-    sideTransactor.address
+    process.env.SIDE_TRANSACTOR
   );
   await setAddress.wait();
   console.log(
@@ -69,7 +69,7 @@ const main = async () => {
 
   setAddress = await rdOwnerETH.setTransactor(
     process.env.GOERLI_CHAIN_ID,
-    sideTransactor.address
+    process.env.SIDE_TRANSACTOR
   );
   await setAddress.wait();
   console.log(

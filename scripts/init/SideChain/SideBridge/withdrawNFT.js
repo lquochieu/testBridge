@@ -23,12 +23,12 @@ const receiver = new ethers.Wallet(receiverKey.privateKey, goerliProvider);
 const main = async () => {
   const Rand = await ethers.getContractFactory("SideBridge");
   const rd = await Rand.attach(process.env.SIDE_BRIDGE);
-  const rdReceiver = await rd.connect(receiver);
+  const rdOwner = await rd.connect(owner);
 
-  const withdrawNFT = await rdReceiver.withdrawTo(
+  const withdrawNFT = await rdOwner.withdrawTo(
     process.env.SIDE_NFT_COLLECTION,
     adminKey.publicKey,
-    1,
+    99,
     "0x",
     {gasLimit: BigInt(1e7)}
   );

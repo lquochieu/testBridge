@@ -7,6 +7,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
 import {ECDSAUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/ECDSAUpgradeable.sol";
 import {EIP712Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/cryptography/draft-EIP712Upgradeable.sol";
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
+import {Signature} from "../../libraries/verify/Signature.sol";
 import {IMainGate} from "../../interfaces/MainChain/MainBridge/IMainGate.sol";
 
 /**
@@ -31,7 +32,7 @@ contract MainTransactor is
             address(libAddressManager) == address(0),
             "MainGate already initialized"
         );
-
+        
         __Lib_AddressResolver_init(_libAddressManager);
         __EIP712_init_unchained(name, version);
         __Ownable_init_unchained();
@@ -59,9 +60,25 @@ contract MainTransactor is
         uint256 _nonce,
         uint256 _deadline,
         bytes memory _signature
-    ) internal pure returns (bool) {
-        ///
-        return true;
+    ) internal view returns (bool) {
+        require(block.timestamp < _deadline, "Singed transaction expired!");
+
+        address signer = Signature.verifySignature(
+            keccak256(
+                abi.encodePacked(
+                    _chainId,
+                    _target,
+                    _sender,
+                    _data,
+                    _nonce,
+                    _deadline
+                )
+            ),
+            _signature
+        );
+
+        require(signer != address(0), "ECDSA: invalid signature");
+        return Signers[signer];
     }
 
     function claimNFTCollection(
@@ -73,7 +90,6 @@ contract MainTransactor is
         uint256 _deadline,
         bytes memory _signature
     ) public nonReentrant whenNotPaused {
-
         require(
             _verifySignature(
                 _chainId,
@@ -86,7 +102,7 @@ contract MainTransactor is
             ),
             "Invalid signature"
         );
-        
+
         IMainGate(resolve("MainGate")).relayMessage(
             _target,
             _sender,

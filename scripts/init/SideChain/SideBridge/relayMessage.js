@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-
+const { genSignature } = require("../../../generateSignature.js");
 require("dotenv").config();
 
 const MainGateContract = require("../../../../artifacts/contracts/MainChain/MainBridge/MainGate.sol/MainGate.json");
@@ -51,28 +51,41 @@ const main = async () => {
   MainGate.on(
     "SentMessage",
     async (chainId, target, sender, message, nonce, event) => {
+      let deadline = Math.floor(Date.now() / 1000) + 10000;
+      let signature = await genSignature(
+        chainId,
+        target,
+        sender,
+        message,
+        nonce,
+        deadline
+      );
+
       console.log(`
-        SentMessage
-        - chainId = ${chainId}
-        - target = ${target}
-        - sender = ${sender}
-        - message = ${message}
-        - nonce = ${nonce}
-        `);
-        const claimNFTCollection = await rdOwner.claimNFTCollection(
-          chainId,
-          target,
-          sender,
-          message,
-          nonce,
-          0,
-          0,
-          {
-            gasLimit: BigInt(1e7)
-          }
-        )
-        await claimNFTCollection.wait();
-        console.log(claimNFTCollection);
+      SentMessage
+      - chainId = ${chainId}
+      - target = ${target}
+      - sender = ${sender}
+      - message = ${message}
+      - nonce = ${nonce}
+      - deadline = ${deadline}
+      - signature = ${signature}
+      `);
+
+      const claimNFTCollection = await rdOwner.claimNFTCollection(
+        chainId,
+        target,
+        sender,
+        message,
+        nonce,
+        deadline,
+        signature,
+        {
+          gasLimit: BigInt(1e7),
+        }
+      );
+      await claimNFTCollection.wait();
+      console.log(claimNFTCollection);
     }
   );
 

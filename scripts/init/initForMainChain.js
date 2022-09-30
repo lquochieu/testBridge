@@ -125,25 +125,25 @@ const main = async () => {
     )
   );
 
-  /*
-    Transactor
-  */
-    const RandTransactor = await ethers.getContractFactory(
-      "MainTransactor"
-    );
-    const rdTransactor = await RandTransactor.attach(
-      process.env.MAIN_TRANSACTOR
-    );
-    const rdOwnerTransactor = await rdTransactor.connect(owner);
+  // /*
+  //   Transactor
+  // */
+  //   const RandTransactor = await ethers.getContractFactory(
+  //     "MainTransactor"
+  //   );
+  //   const rdTransactor = await RandTransactor.attach(
+  //     process.env.MAIN_TRANSACTOR
+  //   );
+  //   const rdOwnerTransactor = await rdTransactor.connect(owner);
 
-    const setSigner = await rdOwnerTransactor.setSigners(
-      adminKey.publicKey,
-      true
-    );
+  //   const setSigner = await rdOwnerTransactor.setSigners(
+  //     adminKey.publicKey,
+  //     true
+  //   );
 
-    await setSigner.wait();
+  //   await setSigner.wait();
 
-    console.log(await rdOwnerTransactor.Signers(adminKey.publicKey));
+  //   console.log(await rdOwnerTransactor.Signers(adminKey.publicKey));
 
 };
 

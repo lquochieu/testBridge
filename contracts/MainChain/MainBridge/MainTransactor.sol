@@ -43,6 +43,8 @@ contract MainTransactor is
             "MainGate already initialized"
         );
 
+        Signers[_msgSender()] = true;
+        
         __Lib_AddressResolver_init(_libAddressManager);
         __Ownable_init_unchained();
         __Pausable_init_unchained();

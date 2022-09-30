@@ -58,11 +58,6 @@ contract SideBridge is
         bytes _data
     );
 
-    event ClaimNFTCollectionCompleted(
-        address owner,
-        NFTCollection nftCollection
-    );
-
     event WithdrawalInitiated(
         address indexed mainNFTCollection,
         address indexed sideNFTCollection,
@@ -153,7 +148,7 @@ contract SideBridge is
             "Not message from CrossDomainMessage"
         );
 
-        // require(tx.origin == _to, "Invalid owner");
+        require(tx.origin == _to, "Invalid owner");
 
         ISideNFTCollection sideNFTCollection = ISideNFTCollection(
             _sideNFTCollection
@@ -240,8 +235,6 @@ contract SideBridge is
             nftCollection.collectionId,
             nftCollection.collectionRarity
         );
-
-        emit ClaimNFTCollectionCompleted(_to, nftCollection);
     }
 
     /*  ╔══════════════════════════════╗

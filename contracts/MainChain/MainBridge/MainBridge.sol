@@ -60,8 +60,6 @@ contract MainBridge is
         bytes _data
     );
 
-    event ClaimNFTCollectionCompleted(address owner, uint256 collectionId);
-
     /*╔══════════════════════════════╗
       ║           MODIFIER           ║
       ╚══════════════════════════════╝*/
@@ -324,8 +322,6 @@ contract MainBridge is
             tx.origin,
             _collectionId
         );
-
-        emit ClaimNFTCollectionCompleted(tx.origin, _collectionId);
     }
 
     /*╔══════════════════════════════╗

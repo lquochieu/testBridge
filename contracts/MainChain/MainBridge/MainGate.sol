@@ -253,7 +253,7 @@ contract MainGate is
         bytes memory _message,
         uint256 _messageNonce
     ) public nonReentrant whenNotPaused {
-        require(msg.sender == resolve("MainTransactor"), "Invalid sender");
+        require(_msgSender() == resolve("MainTransactor"), "Invalid sender");
 
         bytes memory xDomainCallData = _encodeRelayMessage(
             _target,

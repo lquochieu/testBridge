@@ -28,7 +28,7 @@ const main = async () => {
   const withdrawNFT = await rdOwner.withdrawTo(
     process.env.SIDE_NFT_COLLECTION,
     adminKey.publicKey,
-    222,
+    62,
     "0x",
     {gasLimit: BigInt(1e7)}
   );

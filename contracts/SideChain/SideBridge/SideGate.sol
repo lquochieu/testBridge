@@ -253,8 +253,7 @@ contract SideGate is
         uint256 _nonce
     ) public nonReentrant whenNotPaused {
         require(
-            _msgSender() == resolve("SideTransactor") ||
-                _msgSender() == owner(),
+            _msgSender() == resolve("SideTransactor"),
             "Provided message could not be verified."
         );
 

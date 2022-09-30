@@ -96,25 +96,25 @@ const main = async () => {
   await registerVault.wait();
   console.log(registerVault);
 
-    /*
-    Transactor
-  */
-    const RandTransactor = await ethers.getContractFactory(
-      "SideTransactor"
-    );
-    const rdTransactor = await RandTransactor.attach(
-      process.env.SIDE_TRANSACTOR
-    );
-    const rdOwnerTransactor = await rdTransactor.connect(owner);
+  //   /*
+  //   Transactor
+  // */
+  //   const RandTransactor = await ethers.getContractFactory(
+  //     "SideTransactor"
+  //   );
+  //   const rdTransactor = await RandTransactor.attach(
+  //     process.env.SIDE_TRANSACTOR
+  //   );
+  //   const rdOwnerTransactor = await rdTransactor.connect(owner);
 
-    const setSigner = await rdOwnerTransactor.setSigners(
-      adminKey.publicKey,
-      true
-    );
+  //   const setSigner = await rdOwnerTransactor.setSigners(
+  //     adminKey.publicKey,
+  //     true
+  //   );
 
-    await setSigner.wait();
+  //   await setSigner.wait();
 
-    console.log(await rdOwnerTransactor.Signers(adminKey.publicKey));
+  //   console.log(await rdOwnerTransactor.Signers(adminKey.publicKey));
 };
 
 main()

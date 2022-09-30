@@ -25,8 +25,6 @@ const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 const main = async () => {
   const MainTransactor = await ethers.getContractFactory("MainTransactor");
     const mainTransactor = await upgrades.deployProxy(MainTransactor, [
-      "MainTransactor",
-      "1",
       process.env.MAIN_LIB_ADDRESS_MANAGER
     ]);
 
@@ -64,7 +62,7 @@ const main = async () => {
   await setAddress.wait();
   console.log(
     "MAIN_TRANSACTOR = ",
-    await rdOwnerBSC.getAddress("MAIN_TRANSACTOR")
+    await rdOwnerBSC.getAddress("MainTransactor")
   );
 
   setAddress = await rdOwnerBSC.setTransactor(

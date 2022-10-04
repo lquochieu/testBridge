@@ -143,10 +143,6 @@ contract SideBridge is
         bytes calldata _data
     ) external virtual onlyFromCrossDomainAccount(mainNFTBridge) {
         // )external   {
-        require(
-            _msgSender() == messenger || _msgSender() == owner(),
-            "Not message from CrossDomainMessage"
-        );
 
         require(tx.origin == _to, "Invalid owner");
 
@@ -288,7 +284,7 @@ contract SideBridge is
 
         bytes memory message = abi.encodeWithSelector(
             IMainBridge.finalizeNFTWithdrawal.selector,
-            Lib_DefaultValues.GOERLI_CHAIN_ID_TESTNET,
+            getChainID(),
             mainNFTCollecion,
             _sideNFTCollection,
             _from,
@@ -327,5 +323,13 @@ contract SideBridge is
         returns (NFTCollection memory)
     {
         return collections[_collectionId];
+    }
+
+    function getChainID() public view returns (uint256) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return id;
     }
 }

@@ -44,7 +44,7 @@ contract SideTransactor is
         );
 
         Signers[_msgSender()] = true;
-        
+
         __Lib_AddressResolver_init(_libAddressManager);
         __Ownable_init_unchained();
         __Pausable_init_unchained();
@@ -65,11 +65,11 @@ contract SideTransactor is
     /*  ╔══════════════════════════════╗
       ║        ADMIN FUNCTIONS       ║
       ╚══════════════════════════════╝ */
-      
+
     /**
      * Set signer who can sign message
      */
-    
+
     function setSigners(address _signer, bool _isSigner) public onlyOwner {
         require(Signers[_signer] != _isSigner, "Signer was setted");
         Signers[_signer] = _isSigner;
@@ -81,7 +81,7 @@ contract SideTransactor is
 
     /**
      * @dev receive NFT Collection was depositedon MainChain
-     * @param _chainId chainId of this chain
+     * _chainId chainId of this chain
      * @param _target address will call message, when receive infor deposit,
      * target is SideBridge
      * @param _data data when claim is function finalizeDeposit of SideBridge
@@ -93,7 +93,7 @@ contract SideTransactor is
      */
 
     function claimNFTCollection(
-        uint256 _chainId,
+        // uint256 _chainId,
         address _target,
         address _sender,
         bytes memory _data,
@@ -103,7 +103,6 @@ contract SideTransactor is
     ) public nonReentrant whenNotPaused onlyEOA {
         require(
             _verifySignature(
-                _chainId,
                 _target,
                 _sender,
                 _data,
@@ -128,7 +127,6 @@ contract SideTransactor is
      */
 
     function _verifySignature(
-        uint256 _chainId,
         address _target,
         address _sender,
         bytes memory _data,
@@ -141,7 +139,7 @@ contract SideTransactor is
         address signer = Signature.verifySignature(
             keccak256(
                 abi.encodePacked(
-                    _chainId,
+                    getChainID(),
                     _target,
                     _sender,
                     _data,
@@ -156,5 +154,15 @@ contract SideTransactor is
         return Signers[signer];
     }
 
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
 
+    function getChainID() public view returns (uint256) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return id;
+    }
 }

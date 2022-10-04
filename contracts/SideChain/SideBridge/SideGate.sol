@@ -46,6 +46,26 @@ contract SideGate is
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
     /*╔══════════════════════════════╗
+      ║           MODIFIER           ║
+      ╚══════════════════════════════╝*/
+
+    modifier onlyBridgeAdmin() {
+        require(
+            _msgSender() == resolve("SideBridge") || _msgSender() == owner(),
+            "Only Bridge admin can send message"
+        );
+        _;
+    }
+
+    modifier onlyTransactorAdmin() {
+        require(
+            _msgSender() == resolve("SideTransactor") || _msgSender() == owner(),
+            "Only Transactor admin can relay message"
+        );
+        _;
+    }
+
+    /*╔══════════════════════════════╗
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
@@ -124,11 +144,7 @@ contract SideGate is
         uint256 _chainId,
         address _target,
         bytes memory _message
-    ) public whenNotPaused {
-        require(
-            _msgSender() == resolve("SideBridge"),
-            "Only SideBridge can send message"
-        );
+    ) public whenNotPaused onlyBridgeAdmin {
 
         address ovmCanonicalTransactionChain = resolve(
             "SideCanonicalTransactionChain"
@@ -170,11 +186,8 @@ contract SideGate is
         address _sender,
         bytes memory _message,
         uint256 _queueIndex
-    ) public nonReentrant whenNotPaused {
-        require(
-            _msgSender() == resolve("SideBridge"),
-            "Only SideBridge or admin can replay message"
-        );
+    ) public nonReentrant whenNotPaused onlyBridgeAdmin {
+
         // Verify that the message is in the queue:
         address canonicalTransactionChain = resolve(
             "SideCanonicalTransactionChain"
@@ -251,11 +264,7 @@ contract SideGate is
         address _sender,
         bytes memory _message,
         uint256 _nonce
-    ) public nonReentrant whenNotPaused {
-        require(
-            _msgSender() == resolve("SideTransactor"),
-            "Provided message could not be verified."
-        );
+    ) public nonReentrant whenNotPaused onlyTransactorAdmin{
 
         bytes memory xDomainCallData = _encodeRelayMessage(
             _target,

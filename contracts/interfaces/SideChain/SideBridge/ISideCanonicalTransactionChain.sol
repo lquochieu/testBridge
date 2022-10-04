@@ -4,7 +4,6 @@ pragma solidity ^0.8.0;
 import {Lib_OVMCodec} from "../../../libraries/codec/Lib_OVMCodec.sol";
 
 interface ISideCanonicalTransactionChain {
-
     function pause() external;
 
     function getQueueElement(uint256 _index)
@@ -19,4 +18,6 @@ interface ISideCanonicalTransactionChain {
         address _target,
         bytes memory _data
     ) external;
+
+    function dequeue(uint256 _fromIndex, uint256 _toIndex) external;
 }

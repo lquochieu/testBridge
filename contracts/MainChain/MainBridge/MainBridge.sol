@@ -239,7 +239,7 @@ contract MainBridge is
     ) internal view returns (NFTCollection memory) {
         NFTCollection memory nftCollection;
 
-        nftCollection.chainId = Lib_DefaultValues.BSC_CHAIN_ID_TESTNET;
+        nftCollection.chainId = getChainID();
 
         nftCollection.collectionRarity = _mainNFTCollection
             .viewCollectionRarity(_collectionId);
@@ -258,7 +258,7 @@ contract MainBridge is
                 _collectionId
             );
         } else {
-            nftCollection.collectionRank = 1;
+            nftCollection.collectionRank = 0;
             nftCollection.collectionURL = "";
         }
 
@@ -345,5 +345,13 @@ contract MainBridge is
             supportsNFTCollections[_chainId][_mainNFTCollection][
                 _sideNFTCollection
             ];
+    }
+
+    function getChainID() public view returns (uint256) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return id;
     }
 }

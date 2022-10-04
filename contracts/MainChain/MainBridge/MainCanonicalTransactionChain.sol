@@ -29,6 +29,18 @@ contract MainCanonicalTransactionChain is
     );
 
     /*╔══════════════════════════════╗
+      ║           MODIFIER           ║
+      ╚══════════════════════════════╝*/
+
+    modifier onlyGateAdmin() {
+        require(
+            _msgSender() == resolve("MainGate") || _msgSender() == owner(),
+            "Only Gate admin can enqueue message"
+        );
+        _;
+    }
+
+    /*╔══════════════════════════════╗
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
@@ -71,11 +83,7 @@ contract MainCanonicalTransactionChain is
         uint256 _chainId,
         address _target,
         bytes memory _data
-    ) external nonReentrant whenNotPaused {
-        require(
-            _msgSender() == resolve("MainGate") || _msgSender() == owner(),
-            "Invalid owner enqueue"
-        );
+    ) external nonReentrant whenNotPaused onlyGateAdmin {
         address sender;
         if (_msgSender() == tx.origin) {
             sender = _msgSender();
@@ -101,6 +109,28 @@ contract MainCanonicalTransactionChain is
             queueIndex,
             block.timestamp
         );
+    }
+
+    /*╔══════════════════════════════╗
+      ║            DEQUEUE           ║
+      ╚══════════════════════════════╝*/
+
+    /**
+     * @dev delete transaction was sent from MainChain to SideChain
+     */
+    function dequeue(uint256 _fromIndex, uint256 _toIndex)
+        external
+        nonReentrant
+        whenNotPaused
+        onlyOwner
+    {
+        require(
+            _toIndex <= queueElements.length,
+            "Not enough length to dequeue"
+        );
+        for (uint256 i = _fromIndex; i <= _toIndex; i++) {
+            delete queueElements[i];
+        }
     }
 
     /*╔══════════════════════════════╗

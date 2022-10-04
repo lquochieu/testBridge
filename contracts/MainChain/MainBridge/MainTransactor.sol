@@ -44,7 +44,7 @@ contract MainTransactor is
         );
 
         Signers[_msgSender()] = true;
-        
+
         __Lib_AddressResolver_init(_libAddressManager);
         __Ownable_init_unchained();
         __Pausable_init_unchained();
@@ -77,7 +77,7 @@ contract MainTransactor is
 
     /**
      * @dev receive NFT Collection was depositedon SideChain
-     * @param _chainId chainId of this chain
+     * _chainId chainId of this chain
      * @param _target address will call message, when receive infor withdraw,
      * target is MainBridge
      * @param _data data when claim is function finalizeWithdraw of MainBridge
@@ -88,7 +88,7 @@ contract MainTransactor is
      * @param _signature signature of person who verify these transaction on SideChain
      */
     function claimNFTCollection(
-        uint256 _chainId,
+        // uint256 _chainId,
         address _target,
         address _sender,
         bytes memory _data,
@@ -98,7 +98,6 @@ contract MainTransactor is
     ) public nonReentrant whenNotPaused onlyEOA {
         require(
             _verifySignature(
-                _chainId,
                 _target,
                 _sender,
                 _data,
@@ -122,7 +121,6 @@ contract MainTransactor is
      * @return Return true if the signature is valid
      */
     function _verifySignature(
-        uint256 _chainId,
         address _target,
         address _sender,
         bytes memory _data,
@@ -135,7 +133,7 @@ contract MainTransactor is
         address signer = Signature.verifySignature(
             keccak256(
                 abi.encodePacked(
-                    _chainId,
+                    getChainID(),
                     _target,
                     _sender,
                     _data,
@@ -148,5 +146,17 @@ contract MainTransactor is
 
         require(signer != address(0), "ECDSA: invalid signature");
         return Signers[signer];
+    }
+
+    /*╔══════════════════════════════╗
+      ║            GETTERS           ║
+      ╚══════════════════════════════╝*/
+
+    function getChainID() public view returns (uint256) {
+        uint256 id;
+        assembly {
+            id := chainid()
+        }
+        return id;
     }
 }

@@ -45,6 +45,7 @@ contract MainGate is
         bytes message,
         uint256 messageNonce
     );
+
     event RelayedMessage(bytes32 indexed msgHash);
     event FailedRelayedMessage(bytes32 indexed msgHash);
 
@@ -62,7 +63,8 @@ contract MainGate is
 
     modifier onlyTransactorAdmin() {
         require(
-            _msgSender() == resolve("MainTransactor") || _msgSender() == owner(),
+            _msgSender() == resolve("MainTransactor") ||
+                _msgSender() == owner(),
             "Only Transactor admin can relay message"
         );
         _;
@@ -148,7 +150,6 @@ contract MainGate is
         address _target,
         bytes memory _message
     ) public whenNotPaused onlyBridgeAdmin {
-
         address ovmCanonicalTransactionChain = resolve(
             "MainCanonicalTransactionChain"
         );
@@ -171,10 +172,17 @@ contract MainGate is
         _sendXDomainMessage(
             _chainId,
             ovmCanonicalTransactionChain,
+            _message,
             xDomainCallData
         );
 
-        emit SentMessage(_chainId, _target, _msgSender(), _message, nonce);
+        emit SentMessage(
+            _chainId,
+            _target,
+            _msgSender(),
+            _message,
+            nonce
+        );
     }
 
     /**
@@ -190,7 +198,6 @@ contract MainGate is
         bytes memory _message,
         uint256 _queueIndex
     ) public nonReentrant whenNotPaused onlyBridgeAdmin {
-
         // Verify that the message is in the queue:
         address canonicalTransactionChain = resolve(
             "MainCanonicalTransactionChain"
@@ -226,7 +233,16 @@ contract MainGate is
         _sendXDomainMessage(
             _chainId,
             canonicalTransactionChain,
+            _message,
             xDomainCallData
+        );
+
+        emit SentMessage(
+            _chainId,
+            _target,
+            _sender,
+            _message,
+            _queueIndex
         );
     }
 
@@ -238,12 +254,15 @@ contract MainGate is
     function _sendXDomainMessage(
         uint256 _chainId,
         address _canonicalTransactionChain,
-        bytes memory _message
+        bytes memory _message,
+        bytes memory _xDomainCallData
     ) internal {
         IMainCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
             _chainId,
             resolveGate(_chainId),
-            _message
+            _msgSender(),
+            _message,
+            _xDomainCallData
         );
     }
 
@@ -266,7 +285,6 @@ contract MainGate is
         bytes memory _message,
         uint256 _messageNonce
     ) public nonReentrant whenNotPaused onlyTransactorAdmin {
-
         bytes memory xDomainCallData = _encodeRelayMessage(
             _target,
             _sender,

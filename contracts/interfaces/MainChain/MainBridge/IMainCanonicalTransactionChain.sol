@@ -16,8 +16,10 @@ interface IMainCanonicalTransactionChain {
     function enqueue(
         uint256 _chainId,
         address _target,
+        address _sender,
+        bytes memory _message,
         bytes memory _data
     ) external;
 
-    function dequeue(uint256 _fromIndex, uint256 _toIndex) external;
+    // function dequeue(uint256 _fromIndex, uint256 _toIndex) external;
 }

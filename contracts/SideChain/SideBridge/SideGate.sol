@@ -59,7 +59,8 @@ contract SideGate is
 
     modifier onlyTransactorAdmin() {
         require(
-            _msgSender() == resolve("SideTransactor") || _msgSender() == owner(),
+            _msgSender() == resolve("SideTransactor") ||
+                _msgSender() == owner(),
             "Only Transactor admin can relay message"
         );
         _;
@@ -145,7 +146,6 @@ contract SideGate is
         address _target,
         bytes memory _message
     ) public whenNotPaused onlyBridgeAdmin {
-
         address ovmCanonicalTransactionChain = resolve(
             "SideCanonicalTransactionChain"
         );
@@ -168,10 +168,16 @@ contract SideGate is
         _sendXDomainMessage(
             _chainId,
             ovmCanonicalTransactionChain,
+            _message,
             xDomainCallData
         );
 
-        emit SentMessage(_target, _msgSender(), _message, nonce);
+        emit SentMessage(
+            _target,
+            _msgSender(),
+            _message,
+            nonce
+        );
     }
 
     /**
@@ -187,7 +193,6 @@ contract SideGate is
         bytes memory _message,
         uint256 _queueIndex
     ) public nonReentrant whenNotPaused onlyBridgeAdmin {
-
         // Verify that the message is in the queue:
         address canonicalTransactionChain = resolve(
             "SideCanonicalTransactionChain"
@@ -223,7 +228,15 @@ contract SideGate is
         _sendXDomainMessage(
             _chainId,
             canonicalTransactionChain,
+            _message,
             xDomainCallData
+        );
+
+        emit SentMessage(
+            _target,
+            _sender,
+            _message,
+            _queueIndex
         );
     }
 
@@ -236,12 +249,15 @@ contract SideGate is
     function _sendXDomainMessage(
         uint256 _chainId,
         address _canonicalTransactionChain,
-        bytes memory _message
+        bytes memory _message,
+        bytes memory _xDomainCallData
     ) internal {
         ISideCanonicalTransactionChain(_canonicalTransactionChain).enqueue(
             _chainId,
             resolveGate(_chainId),
-            _message
+            _msgSender(),
+            _message,
+            _xDomainCallData
         );
     }
 
@@ -264,8 +280,7 @@ contract SideGate is
         address _sender,
         bytes memory _message,
         uint256 _nonce
-    ) public nonReentrant whenNotPaused onlyTransactorAdmin{
-
+    ) public nonReentrant whenNotPaused onlyTransactorAdmin {
         bytes memory xDomainCallData = _encodeRelayMessage(
             _target,
             _sender,

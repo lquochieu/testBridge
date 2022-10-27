@@ -28,6 +28,8 @@ contract SideCanonicalTransactionChain is
         uint256 timestamp
     );
 
+    event DequeueCompleted(uint256 fromIndex, uint256 toIndex);
+
     /*╔══════════════════════════════╗
       ║           MODIFIER           ║
       ╚══════════════════════════════╝*/
@@ -82,57 +84,60 @@ contract SideCanonicalTransactionChain is
     function enqueue(
         uint256 _chainId,
         address _target,
+        address _sender,
+        bytes memory _message,
         bytes memory _data
     ) external nonReentrant whenNotPaused onlyGateAdmin {
-
-        address sender;
-        if (_msgSender() == tx.origin) {
-            sender = _msgSender();
-        } else {
-            sender = resolveTransactor(_chainId);
-        }
-
-        bytes32 transactionHash = keccak256(abi.encode(sender, _target, _data));
+        bytes32 transactionHash = keccak256(
+            abi.encode(_chainId, _target, _sender, _message, _data)
+        );
 
         queueElements.push(
             Lib_OVMCodec.QueueElement({
                 transactionHash: transactionHash,
                 timestamp: uint40(block.timestamp),
-                blockNumber: uint40(block.number)
+                blockNumber: uint40(block.number),
+                chainId: _chainId,
+                target: _target,
+                sender: _sender,
+                message: _message,
+                data: _data,
+                nonce: queueElements.length
             })
         );
 
-        uint256 queueIndex = queueElements.length - 1;
         emit TransactorEvent(
-            sender,
+            _sender,
             _target,
             _data,
-            queueIndex,
+            queueElements.length,
             block.timestamp
         );
     }
 
-    /*╔══════════════════════════════╗
-      ║            DEQUEUE           ║
-      ╚══════════════════════════════╝*/
+    // /*╔══════════════════════════════╗
+    //   ║            DEQUEUE           ║
+    //   ╚══════════════════════════════╝*/
 
-    /**
-     * @dev delete transaction was sent from MainChain to SideChain
-     */
-    function dequeue(uint256 _fromIndex, uint256 _toIndex)
-        external
-        nonReentrant
-        whenNotPaused
-        onlyOwner
-    {
-        require(
-            _toIndex <= queueElements.length,
-            "Not enough length to dequeue"
-        );
-        for (uint256 i = _fromIndex; i <= _toIndex; i++) {
-            delete queueElements[i];
-        }
-    }
+    // /**
+    //  * @dev delete transaction was sent from MainChain to SideChain
+    //  */
+    // function dequeue(uint256 _fromIndex, uint256 _toIndex)
+    //     external
+    //     nonReentrant
+    //     whenNotPaused
+    //     onlyOwner
+    // {
+    //     require(
+    //         _toIndex <= queueElements.length,
+    //         "Not enough length to dequeue"
+    //     );
+    //     for (uint256 i = _fromIndex; i <= _toIndex; i++) {
+    //         delete queueElements[i];
+    //     }
+
+    //     emit DequeueCompleted(_fromIndex, _toIndex);
+    // }
 
     /*╔══════════════════════════════╗
       ║            GETTERS           ║

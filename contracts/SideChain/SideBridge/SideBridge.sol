@@ -50,6 +50,7 @@ contract SideBridge is
     );
 
     event DepositFailed(
+        uint256 chainId,
         address indexed mainNFTCollection,
         address indexed sideNFTCollection,
         address indexed _from,
@@ -170,6 +171,7 @@ contract SideBridge is
         } else {
             bytes memory message = abi.encodeWithSelector(
                 IMainBridge.finalizeNFTWithdrawal.selector,
+                getChainID(),
                 _mainNFTCollection,
                 _sideNFTCollection,
                 _to, // switched the _to and _from here to bounce back the deposit to the sender
@@ -185,6 +187,7 @@ contract SideBridge is
             );
 
             emit DepositFailed(
+                getChainID(),
                 _mainNFTCollection,
                 _sideNFTCollection,
                 _from,

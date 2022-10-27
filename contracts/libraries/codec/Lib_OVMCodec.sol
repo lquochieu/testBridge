@@ -11,5 +11,11 @@ library Lib_OVMCodec {
         bytes32 transactionHash;
         uint40 timestamp;
         uint40 blockNumber;
+        uint256 chainId;
+        address target;
+        address sender;
+        bytes message;
+        bytes data;
+        uint256 nonce;
     }
 }

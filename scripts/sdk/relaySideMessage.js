@@ -7,13 +7,14 @@ const {
   PrepareNFTCollectionModel,
 } = require("../sql/model");
 
-const { 
-  MainBridgeContract, 
-  MainGateContract, 
-  MainCanonicalTransactionChain, 
-  SideGateContract, 
-  SideBridgeContract 
+const {
+  MainBridgeContract,
+  MainGateContract,
+  MainCanonicalTransactionChain,
+  SideGateContract,
+  SideBridgeContract
 } = require("./contract");
+const { sideOwner } = require("./provider");
 
 const { genSignature } = require("./signature.js");
 require("dotenv").config();
@@ -30,13 +31,13 @@ const goerliProvider = new ethers.providers.InfuraProvider(
   process.env.ABI_KEY
 );
 
-const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
+// const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
 
 const main = async () => {
-  const Rand = await ethers.getContractFactory("SideTransactor");
-  const rd = await Rand.attach(process.env.SIDE_TRANSACTOR);
-  const rdOwner = await rd.connect(owner);
-  
+  // const Rand = await ethers.getContractFactory("SideTransactor");
+  // const rd = await Rand.attach(process.env.SIDE_TRANSACTOR);
+  // const rdOwner = await rd.connect(sideOwner);
+
 
   await mongoose.connect(urlDatabase);
 
@@ -145,18 +146,18 @@ const main = async () => {
         blocknumber: event.blockNumber,
       });
 
-      const claimNFTCollection = await rdOwner.claimNFTCollection(
-        // chainId,
-        _target,
-        _sender,
-        _message,
-        _nonce,
-        deadline,
-        signature,
-        { gasLimit: BigInt(1e7) }
-      );
-      await claimNFTCollection.wait();
-      console.log(claimNFTCollection);
+      // const claimNFTCollection = await rdOwner.claimNFTCollection(
+      //   // chainId,
+      //   _target,
+      //   _sender,
+      //   _message,
+      //   _nonce,
+      //   deadline,
+      //   signature,
+      //   { gasLimit: BigInt(1e7) }
+      // );
+      // await claimNFTCollection.wait();
+      // console.log(claimNFTCollection);
 
     }
   );
@@ -191,7 +192,7 @@ const main = async () => {
     - xDomainData = ${_data}
     `);
 
-    let blockNumber = (await mainTransactorModel.find({ data: _data }))
+    let blockNumber = (await MainTransactorModel.find({ data: _data }))
       .blockNumber;
     await DepositModel.updateOne(
       { blockNumber: blockNumber },
@@ -242,7 +243,7 @@ const main = async () => {
   - data = ${_data}
   - blocknumber = ${event.blockNumber}
   `);
-       
+
       await PrepareNFTCollectionModel.updateOne(
         { collectionId: _collectionId },
         { $set: { status: 1 } }
@@ -279,7 +280,7 @@ const main = async () => {
   - data = ${_data}
   - blocknumber = ${event.blockNumber}
   `);
-       
+
       await DepositModel.updateOne(
         { collectionId: _collectionId },
         { $set: { status: 3 } }

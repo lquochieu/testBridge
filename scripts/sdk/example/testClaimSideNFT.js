@@ -1,25 +1,14 @@
 const { BigNumber } = require("ethers");
 const { ethers } = require("hardhat");
+const { sideOwner } = require("../provider");
 const { genSignature } = require("../signature");
 
 require("dotenv").config();
 
-const adminKey = {
-    publicKey: process.env.PUBLIC_KEY,
-    privateKey: process.env.PRIVATE_KEY,
-};
-
-const goerliProvider = new ethers.providers.InfuraProvider(
-    "goerli",
-    process.env.ABI_KEY
-);
-
-const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
-
 const main = async () => {
     const Rand = await ethers.getContractFactory("SideTransactor");
     const rd = await Rand.attach(process.env.SIDE_TRANSACTOR);
-    const rdOwner = await rd.connect(owner);
+    const rdOwner = await rd.connect(sideOwner);
 
     const chainId = 5;
     // console.log(chainId);

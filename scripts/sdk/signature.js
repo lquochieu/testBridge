@@ -1,12 +1,13 @@
 const { ethers } = require("hardhat");
+const { mainOwner } = require("./rdOwner");
 require("dotenv").config();
 
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
+// const adminKey = {
+//   publicKey: process.env.PUBLIC_KEY,
+//   privateKey: process.env.PRIVATE_KEY,
+// };
 
-const signer = new ethers.Wallet(adminKey.privateKey, ethers.provider);
+// const signer = new ethers.Wallet(adminKey.privateKey, ethers.provider);
 
 const genSignature = async (
   chainId,
@@ -26,7 +27,7 @@ const genSignature = async (
     "hex"
   );
 
-  return await signer.signMessage(msg);
+  return await mainOwner.signMessage(msg);
 };
 
 module.exports = {

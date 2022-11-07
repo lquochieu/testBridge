@@ -1,54 +1,75 @@
 "use strict";
-exports.MainBridgeContract = exports.MainGateContract = exports.MainCanonicalTransactionChainContract = exports.SideBridgeContract = exports.SideGateContract = exports.SideCanonicalTransactionChainContract = void 0;
+exports.goerliProvider = exports.MainBridgeContract = exports.MainGateContract = exports.MainCanonicalTransactionChainContract = exports.SideBridgeContract = exports.SideGateContract = exports.SideCanonicalTransactionChainContract = void 0;
 
 const { ethers } = require("hardhat");
 const MainBridgeArtifact = require("../../artifacts/contracts/MainChain/MainBridge/MainBridge.sol/MainBridge.json");
 const MainGateArtifact = require("../../artifacts/contracts/MainChain/MainBridge/MainGate.sol/MainGate.json");
-const MainCanonicalTransactionChainContract = require("../../artifacts/contracts/MainChain/MainBridge/MainCanonicalTransactionChain.sol/MainCanonicalTransactionChain.json");
+const MainCanonicalTransactionChainContractArtifact = require("../../artifacts/contracts/MainChain/MainBridge/MainCanonicalTransactionChain.sol/MainCanonicalTransactionChain.json");
 const SideBridgeArtifact = require("../../artifacts/contracts/SideChain/SideBridge/SideBridge.sol/SideBridge.json");
 const SideGateArtifact = require("../../artifacts/contracts/SideChain/SideBridge/SideGate.sol/SideGate.json");
 const SideCanonicalTransactionChainArtifact = require("../../artifacts/contracts/SideChain/SideBridge/SideCanonicalTransactionChain.sol/SideCanonicalTransactionChain.json");
+const { goerliProvider } = require("./rdOwner");
 
 require("dotenv").config();
 
-const goerliProvider = new ethers.providers.InfuraProvider(
-    "goerli",
-    process.env.ABI_KEY
-);
+const getMainBridgeContract = () => {
+    return new ethers.Contract(
+        process.env.MAIN_BRIDGE,
+        MainBridgeArtifact.abi,
+        ethers.provider
+    );
+}
+const MainBridgeContract = getMainBridgeContract();
+exports.MainBridgeContract = MainBridgeContract;
 
-exports.MainBridgeContract = new ethers.Contract(
-    process.env.MAIN_BRIDGE,
-    MainBridgeArtifact.abi,
-    ethers.provider
-);
+const getMainGateContract = () => {
+    return new ethers.Contract(
+        process.env.MAIN_GATE,
+        MainGateArtifact.abi,
+        ethers.provider
+    );
+}
+const MainGateContract = getMainGateContract();
+exports.MainGateContract = MainGateContract;
 
-exports.MainGateContract = new ethers.Contract(
-    process.env.MAIN_GATE,
-    MainGateArtifact.abi,
-    ethers.provider
-);
+const getMainCanonicalTransactionChainContract = () => {
+    return new ethers.Contract(
+        process.env.MAIN_CANONICAL_TRANSACTION_CHAIN,
+        MainCanonicalTransactionChainContractArtifact.abi,
+        ethers.provider
+    );
+}
+const MainCanonicalTransactionChainContract = getMainCanonicalTransactionChainContract();
+exports.MainCanonicalTransactionChainContract = MainCanonicalTransactionChainContract;
 
-exports.MainCanonicalTransactionChainContract = new ethers.Contract(
-    process.env.MAIN_CANONICAL_TRANSACTION_CHAIN,
-    MainCanonicalTransactionChainContract.abi,
-    ethers.provider
-);
 
-exports.SideBridgeContract = new ethers.Contract(
-    process.env.SIDE_BRIDGE,
-    SideBridgeArtifact.abi,
-    goerliProvider
-);
+const getSideBridgeContract = () => {
+    return new ethers.Contract(
+        process.env.SIDE_BRIDGE,
+        SideBridgeArtifact.abi,
+        goerliProvider
+    );
+}
+const SideBridgeContract = getSideBridgeContract();
+exports.SideBridgeContract = SideBridgeContract;
 
-exports.SideGateContract = new ethers.Contract(
-    process.env.SIDE_GATE,
-    SideGateArtifact.abi,
-    goerliProvider
-);
+const getSideGateContract = () => {
+    return new ethers.Contract(
+        process.env.SIDE_GATE,
+        SideGateArtifact.abi,
+        goerliProvider
+    );
+}
+const SideGateContract = getSideGateContract();
+exports.SideGateContract = SideGateContract;
 
-exports.SideCanonicalTransactionChainContract = new ethers.Contract(
-    process.env.SIDE_CANONICAL_TRANSACTION_CHAIN,
-    SideCanonicalTransactionChainArtifact.abi,
-    goerliProvider
-);
+const getSideCanonicalTransactionChainContract = () => {
+    return new ethers.Contract(
+        process.env.SIDE_CANONICAL_TRANSACTION_CHAIN,
+        SideCanonicalTransactionChainArtifact.abi,
+        goerliProvider
+    );
+}
+const SideCanonicalTransactionChainContract = getSideCanonicalTransactionChainContract();
+exports.SideCanonicalTransactionChainContract = SideCanonicalTransactionChainContract;
 

@@ -1,19 +1,7 @@
 const { ethers } = require("hardhat");
+const { mainOwner } = require("../sdk/rdOwner");
 
 require("dotenv").config();
-
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
-
-const receiverKey = {
-  publicKey: process.env.PUBLIC_KEY_RECEIVER,
-  privateKey: process.env.PRIVATE_KEY_RECEIVER,
-};
-
-const owner = new ethers.Wallet(adminKey.privateKey, ethers.provider);
-const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 
 const addressContract = [
   "MainBridge",
@@ -34,7 +22,7 @@ const main = async () => {
   */
   const RandBridge = await ethers.getContractFactory("MainBridge");
   const rdBridge = await RandBridge.attach(process.env.MAIN_BRIDGE);
-  const rdOwnerBridge = await rdBridge.connect(owner);
+  const rdOwnerBridge = await rdBridge.connect(mainOwner);
   // /*
   //   Set SideBridge on goerli
   // */

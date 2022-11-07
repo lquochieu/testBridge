@@ -1,23 +1,17 @@
 const { ethers } = require("hardhat");
+const { mainOwner } = require("../../sdk/provider");
 
 require("dotenv").config();
-
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
-
-const owner = new ethers.Wallet(adminKey.privateKey, ethers.provider);
 
 const addressContract = ["MainBridge", "MainCanonicalTransactionChain", "MainGate", "MainTransactor"];
 const envAddressContract = ["MAIN_BRIDGE", "MAIN_CANONICAL_TRANSACTION_CHAIN", "MAIN_GATE", "MAIN_TRANSACTOR"];
 const main = async () => {
   const Rand = await ethers.getContractFactory("Lib_AddressManager");
   const rd = await Rand.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
-  const rdOwner = await rd.connect(owner);
+  const rdOwner = await rd.connect(mainOwner);
 
   let setAddress;
-  for(let i = 3; i < addressContract.length; i++) {
+  for (let i = 3; i < addressContract.length; i++) {
     setAddress = await rdOwner.setAddress(addressContract[i], process.env[envAddressContract[i]]);
     await setAddress.wait();
     console.log(addressContract[i], await rdOwner.getAddress(addressContract[i]));

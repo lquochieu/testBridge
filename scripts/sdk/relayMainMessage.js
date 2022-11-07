@@ -15,32 +15,13 @@ const {
   SideTransactorModel,
 } = require("../sql/model");
 const { genSignature } = require("./signature.js");
+const { mainOwner } = require("./provider");
 require("dotenv").config();
 
 const urlDatabase = `mongodb://${process.env.LOCAL_HOST}:27017/testBridge`;
 
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
-
-const receiverKey = {
-  publicKey: process.env.PUBLIC_KEY_RECEIVER,
-  privateKey: process.env.PRIVATE_KEY_RECEIVER,
-};
-
-const goerliProvider = new ethers.providers.InfuraProvider(
-  "goerli",
-  process.env.ABI_KEY
-);
-
-const owner = new ethers.Wallet(adminKey.privateKey, ethers.provider);
-const receiver = new ethers.Wallet(receiverKey.privateKey, goerliProvider);
 
 const main = async () => {
-  const Rand = await ethers.getContractFactory("MainTransactor");
-  const rd = await Rand.attach(process.env.MAIN_TRANSACTOR);
-  const rdOwner = await rd.connect(owner);
 
   await mongoose.connect(urlDatabase);
 
@@ -184,7 +165,7 @@ const main = async () => {
       )
     }
   );
-  
+
   MainGateContract.on("RelayedMessage", async (_data, event) => {
     console.log(`
     Withdraw NFT success!
@@ -207,7 +188,7 @@ const main = async () => {
     - blockNumber = ${event.blockNumber}
     `
     );
-    let blockNumber = (await sideTransactorModel.find({ data: _data })).blockNumber;
+    let blockNumber = (await SideTransactorModel.find({ data: _data })).blockNumber;
     await PrepareNFTCollectionModel.updateOne(
       { blockNumber: blockNumber },
       { $set: { status: 2 } }

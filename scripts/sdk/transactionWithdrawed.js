@@ -1,11 +1,12 @@
 "use strict";
-exports.addSideTransactorValue = exports.addSideSentMessageValue = exports.addPrepareWithdrawNFTCollectionValue = exports.addWithdrawedValue = exports.getSideTransactorEvent = exports.getSideSentMessageEvent = exports.getNFTWithdrawalInitiatedEvent =exports.getSideBlockNumberByIndex = exports.checkWithdrawedNFTCollection = void 0;
+exports.addSideTransactorValue = exports.addSideSentMessageValue = exports.addPrepareWithdrawNFTCollectionValue = exports.addWithdrawedValue = exports.getSideTransactorEvent = exports.getSideSentMessageEvent = exports.getNFTWithdrawalInitiatedEvent = exports.getSideBlockNumberByIndex = exports.checkWithdrawedNFTCollection = void 0;
 const { SideSentMessageModel, WithdrawModel, PrepareNFTCollectionModel, SideTransactorModel } = require("../sql/model");
 const { SideBridgeContract, SideGateContract, SideCanonicalTransactionChainContract } = require("./contract");
+const { rdOwnerSideNFTCollection } = require("./rdOwner");
 const { genSignature } = require("./signature");
 
-const addSideTransactorValue = async (rdOwner, nonce) => {
-    let event = await getSideTransactorEvent(rdOwner, nonce);
+const addSideTransactorValue = async (nonce) => {
+    let event = await getSideTransactorEvent(nonce);
 
     await SideTransactorModel.create({
         sender: event.sender,
@@ -17,10 +18,10 @@ const addSideTransactorValue = async (rdOwner, nonce) => {
 }
 exports.addSideTransactorValue = addSideTransactorValue;
 
-const addSideSentMessageValue = async (rdOwner, nonce, expireTime) => {
+const addSideSentMessageValue = async (nonce, expireTime) => {
 
-    let blockNumber = await getSideBlockNumberByIndex(rdOwner, nonce);
-    let event = await getSideSentMessageEvent(rdOwner, nonce);
+    let blockNumber = await getSideBlockNumberByIndex(nonce);
+    let event = await getSideSentMessageEvent(nonce);
     let timestampDeposited = (await SideCanonicalTransactionChainContract.queryFilter("TransactorEvent", blockNumber, blockNumber))[0].args.timestamp.toNumber() * 1000;
     let deadline = timestampDeposited + expireTime;
     let signature = await genSignature(
@@ -46,13 +47,13 @@ const addSideSentMessageValue = async (rdOwner, nonce, expireTime) => {
 
 exports.addSideSentMessageValue = addSideSentMessageValue;
 
-const addPrepareWithdrawNFTCollectionValue = async (rdOwnerSideCanonicalTransactionChain, rdOwnerSideNFTCollection, nonce, status) => {
-    let event = await getNFTWithdrawalInitiatedEvent(rdOwnerSideCanonicalTransactionChain, rdOwnerSideNFTCollection, nonce);
+const addPrepareWithdrawNFTCollectionValue = async (nonce, status) => {
+    let event = await getNFTWithdrawalInitiatedEvent(nonce);
     // console.log(event);
     if ((await PrepareNFTCollectionModel.find({ collectionId: event.collectionId.toNumber() })).length) {
 
         try {
-            let ownerNFTCollection = await rdOwnerSideNFTCollection.ownerOf(event.collectionId.toNumber());
+            let ownerNFTCollection = await (await rdOwnerSideNFTCollection()).ownerOf(event.collectionId.toNumber());
             await PrepareNFTCollectionModel.updateOne(
                 { collectionId: event.collectionId.toNumber() },
                 {
@@ -87,8 +88,8 @@ const addPrepareWithdrawNFTCollectionValue = async (rdOwnerSideCanonicalTransact
 }
 exports.addPrepareWithdrawNFTCollectionValue = addPrepareWithdrawNFTCollectionValue;
 
-const addWithdrawedValue = async (rdOwnerSideCanonicalTransactionChain, nonce) => {
-    let event = await getNFTWithdrawalInitiatedEvent(rdOwnerSideCanonicalTransactionChain, nonce);
+const addWithdrawedValue = async (nonce) => {
+    let event = await getNFTWithdrawalInitiatedEvent(nonce);
 
     await WithdrawModel.create({
         mainNFTCollection: event.mainNFTCollection,
@@ -98,13 +99,13 @@ const addWithdrawedValue = async (rdOwnerSideCanonicalTransactionChain, nonce) =
         collectionId: event.nftCollection.collectionId,
         data: event.data,
         status: 0,
-        blockNumber: await getSideBlockNumberByIndex(rdOwnerSideCanonicalTransactionChain, nonce),
+        blockNumber: await getSideBlockNumberByIndex(nonce),
     });
 }
 exports.addWithdrawedValue = addWithdrawedValue;
 
-const getSideTransactorEvent = async (rdOwnerSideCanonicalTransactionChain, nonce) => {
-    let blockNumber = await getSideBlockNumberByIndex(rdOwnerSideCanonicalTransactionChain, nonce);
+const getSideTransactorEvent = async (nonce) => {
+    let blockNumber = await getSideBlockNumberByIndex(nonce);
 
     const events = (await SideCanonicalTransactionChainContract.queryFilter("TransactorEvent", blockNumber, blockNumber))[0].args;
 
@@ -118,8 +119,8 @@ const getSideTransactorEvent = async (rdOwnerSideCanonicalTransactionChain, nonc
 }
 exports.getSideTransactorEvent = getSideTransactorEvent;
 
-const getSideSentMessageEvent = async (rdOwnerSideCanonicalTransactionChain, nonce) => {
-    let blockNumber = await getSideBlockNumberByIndex(rdOwnerSideCanonicalTransactionChain, nonce);
+const getSideSentMessageEvent = async (nonce) => {
+    let blockNumber = await getSideBlockNumberByIndex(nonce);
 
     const events = (await SideGateContract.queryFilter("SentMessage", blockNumber, blockNumber))[0].args;
     return {
@@ -131,9 +132,9 @@ const getSideSentMessageEvent = async (rdOwnerSideCanonicalTransactionChain, non
 }
 exports.getSideSentMessageEvent = getSideSentMessageEvent;
 
-const getNFTWithdrawalInitiatedEvent = async (rdOwnerSideCanonicalTransactionChain, nonce) => {
+const getNFTWithdrawalInitiatedEvent = async (nonce) => {
 
-    let blockNumber = await getSideBlockNumberByIndex(rdOwnerSideCanonicalTransactionChain, nonce);
+    let blockNumber = await getSideBlockNumberByIndex(nonce);
 
     const events = (await SideBridgeContract.queryFilter("NFTWithdrawalInitiated", blockNumber, blockNumber))[0].args;
     return {
@@ -147,9 +148,9 @@ const getNFTWithdrawalInitiatedEvent = async (rdOwnerSideCanonicalTransactionCha
 }
 exports.getNFTWithdrawalInitiatedEvent = getNFTWithdrawalInitiatedEvent;
 
-const getSideBlockNumberByIndex = async (rdOwnerSideCanonicalTransactionChain, nonce) => {
+const getSideBlockNumberByIndex = async (nonce) => {
 
-    const blockNumber = (await rdOwnerSideCanonicalTransactionChain.getQueueElement(
+    const blockNumber = (await (await rdOwnerSideCanonicalTransactionChain()).getQueueElement(
         nonce
     )).blockNumber;
 

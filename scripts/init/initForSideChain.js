@@ -2,18 +2,17 @@ const { ethers } = require("hardhat");
 const { sideOwner } = require("../sdk/rdOwner");
 require("dotenv").config();
 
-
 const addressContract = [
   "SideBridge",
   "SideCanonicalTransactionChain",
   "SideGate",
-  "SideTransactor"
+  "SideTransactor",
 ];
 const envAddressContract = [
   "SIDE_BRIDGE",
   "SIDE_CANONICAL_TRANSACTION_CHAIN",
   "SIDE_GATE",
-  "SIDE_TRANSACTOR"
+  "SIDE_TRANSACTOR",
 ];
 
 const main = async () => {
@@ -23,7 +22,9 @@ const main = async () => {
   const rdLib_AddressManager = await RandLib_AddressManager.attach(
     process.env.SIDE_LIB_ADDRESS_MANAGER
   );
-  const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(sideOwner);
+  const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(
+    sideOwner
+  );
 
   let setAddress;
   for (let i = 0; i < addressContract.length; i++) {
@@ -65,8 +66,12 @@ const main = async () => {
   /*
     set register vault
      */
-  const RandSideNFTCollection = await ethers.getContractFactory("SideNFTCollection");
-  const rdSideNFTCollection = await RandSideNFTCollection.attach(process.env.SIDE_NFT_COLLECTION);
+  const RandSideNFTCollection = await ethers.getContractFactory(
+    "SideNFTCollection"
+  );
+  const rdSideNFTCollection = await RandSideNFTCollection.attach(
+    process.env.SIDE_NFT_COLLECTION
+  );
   const SideNFTCollection = await rdSideNFTCollection.connect(owner);
 
   const updateSideBridge = await SideNFTCollection.updateSideBridge(
@@ -75,19 +80,17 @@ const main = async () => {
   await updateSideBridge.wait();
   console.log("SideBridge: ", await SideNFTCollection.getSideBridge());
 
-  const registerVault = await SideNFTCollection.registerVault(process.env.SIDE_BRIDGE);
+  const registerVault = await SideNFTCollection.registerVault(
+    process.env.SIDE_BRIDGE
+  );
   await registerVault.wait();
   console.log("registerVaults", registerVault);
 
   /*
   Transactor
 */
-  const RandTransactor = await ethers.getContractFactory(
-    "SideTransactor"
-  );
-  const rdTransactor = await RandTransactor.attach(
-    process.env.SIDE_TRANSACTOR
-  );
+  const RandTransactor = await ethers.getContractFactory("SideTransactor");
+  const rdTransactor = await RandTransactor.attach(process.env.SIDE_TRANSACTOR);
   const rdOwnerTransactor = await rdTransactor.connect(owner);
 
   const setSigner = await rdOwnerTransactor.setSigners(

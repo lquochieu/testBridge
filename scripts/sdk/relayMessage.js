@@ -71,183 +71,140 @@ const genSignature = async (
 module.exports = {
   genSignature,
 };
+
 async function getUnclaimedOnETH(addressRaw) {
   let address = addressRaw;
   address = address.toLowerCase().substring(2);
-  // const balance = await MainCollectionContract.balanceOf(
-  //   process.env.MAIN_BRIDGE
-  // );
-  // console.log(balance);
-  // const tuple = new Array(parseInt(balance)).fill(1).map((_, idx) => ({
-  //   address: process.env.MAIN_NFT_COLLECTION,
-  //   name: "tokenOfOwnerByIndex",
-  //   params: [process.env.MAIN_BRIDGE, idx],
-  // }));
-  // console.log(tuple);
-  // const [collectionIds] = await Promise.all([
-  //   multiCall(NFTCollectionMainABI, tuple),
-  // ]);
-  // const collectionFlat = collectionIds.flat().map((el) => parseInt(el));
-  // console.log("collection", collectionFlat);
-  const queueElement =
-    await MainCanonicalTransactionChainContract.getQueueLength();
-  const tupleQueue = new Array(parseInt(queueElement))
-    .fill(1)
-    .map((_, idx) => ({
-      address: process.env.MAIN_CANONICAL_TRANSACTION_CHAIN,
-      name: "getQueueElement",
-      params: [idx],
-    }));
-  const [listQueue] = await Promise.all([
-    multiCall(MainCanonicalTransactionChainContractArtifact.abi, tupleQueue),
+  const [
+    balanceOfMainBridge,
+    balanceOfSideCollection,
+    mainQueueLength,
+    sideQueueLength,
+  ] = await Promise.all([
+    MainCollectionContract.balanceOf(process.env.MAIN_BRIDGE),
+    SideCollectionContract.totalSupply(),
+    MainCanonicalTransactionChainContract.getQueueLength(),
+    SideCanonicalTransactionChainContract.getQueueLength(),
   ]);
-  const listIdmain = listQueue.flat().map((element) => {
-    return parseInt(element.message.substring(586 - 64, 586), 16);
-  });
-  // console.log("listIdmain", listIdmain);
-  const listMain = listQueue.flat();
-
-  // let listFilter = listQueue.flat().filter((element) => {
-  //   return (
-  //     element.message.substring(34 + 64 * 3, 34 + 64 * 3 + 40) === address &&
-  //     collectionFlat.includes(
-  //       parseInt(element.message.substring(584, 584 + 2), 16)
-  //     )
-  //   );
-  // });
-  // console.log(listFilter.length);
-  // const listIdsCopy = [...collectionFlat];
-  // const listReverse = [...listFilter].reverse();
-
-  // const listUnclaimed = [];
-  // listReverse.forEach((el) => {
-  //   if (
-  //     listIdsCopy.includes(parseInt(el.message.substring(584, 584 + 2), 16))
-  //   ) {
-  //     let index = listIdsCopy.indexOf(
-  //       parseInt(el.message.substring(584, 584 + 2), 16)
-  //     );
-  //     listIdsCopy.splice(index, 1);
-  //     listUnclaimed.push(el);
-  //   }
-  // });
-  const sideQueueElement =
-    await SideCanonicalTransactionChainContract.getQueueLength();
-  // console.log(sideQueueElement);
-  const sideTupleQueue = new Array(parseInt(sideQueueElement))
-    .fill(1)
-    .map((_, idx) => ({
-      address: process.env.SIDE_CANONICAL_TRANSACTION_CHAIN,
-      name: "getQueueElement",
-      params: [idx],
-    }));
-  const [listSideQueue] = await Promise.all([
-    sidemultiCall(SideCanonicalTransactionChainArtifact.abi, sideTupleQueue),
-  ]);
-  const listIdSideQueue = listSideQueue.flat().map((el) => {
-    return parseInt(el.message.substring(394 - 64, 394), 16);
-  });
-  const sideBalance = await SideCollectionContract.balanceOf(addressRaw);
-  // console.log(sideBalance);
-  const sideTuple = new Array(parseInt(sideBalance)).fill(1).map((_, idx) => ({
-    address: process.env.SIDE_NFT_COLLECTION,
-    name: "tokenOfOwnerByIndex",
-    params: [addressRaw, idx],
-  }));
-  const [sidecollectionIds] = await Promise.all([
-    sidemultiCall(SideCollectionArtifact.abi, sideTuple),
-  ]);
-  const sidecollectionFlat = sidecollectionIds.flat().map((el) => parseInt(el));
-  // console.log("sidecollection", sidecollectionFlat);
-  // console.log("listIdSideQueue", listIdSideQueue);
-  const listUnclaimedIndex = [];
-  listIdmain.filter((el, index) => {
-    let res = listIdSideQueue.indexOf(el) < 0;
-    if (!res) {
-      listIdSideQueue.splice(listIdSideQueue.indexOf(el), 1);
-    } else listUnclaimedIndex.push(index);
-    return res;
-  });
-  // console.log("listQueue", listUnclaimedIndex);
-  const collectionIdsFlattened = [];
-  listUnclaimedIndex.forEach((el) => {
-    if (
-      !sidecollectionFlat.includes(listIdmain[el]) &&
-      listMain[el].message.substring(34 + 64 * 3, 34 + 64 * 3 + 40) === address
-    ) {
-      collectionIdsFlattened.push(listIdmain[el]);
-    }
-  });
-  return collectionIdsFlattened;
-}
-async function getUnclaimedOnBSC(addressRaw) {
-  let address = addressRaw;
-  console.log(addressRaw);
-  const balance = await MainCollectionContract.balanceOf(addressRaw);
-
-  const tuple = new Array(parseInt(balance)).fill(1).map((_, idx) => ({
-    address: process.env.MAIN_NFT_COLLECTION,
-    name: "tokenOfOwnerByIndex",
-    params: [addressRaw, idx],
-  }));
-
-  const [collectionIds] = await Promise.all([
-    multiCall(NFTCollectionMainABI, tuple),
-  ]);
-  const balanceBridge = await MainCollectionContract.balanceOf(
-    process.env.MAIN_BRIDGE
-  );
-
-  const tupleBridge = new Array(parseInt(balanceBridge))
+  const tupleMainBridge = new Array(parseInt(balanceOfMainBridge))
     .fill(1)
     .map((_, idx) => ({
       address: process.env.MAIN_NFT_COLLECTION,
       name: "tokenOfOwnerByIndex",
       params: [process.env.MAIN_BRIDGE, idx],
     }));
+  const tupleSideCollection = new Array(parseInt(balanceOfSideCollection))
+    .fill(1)
+    .map((_, idx) => ({
+      address: process.env.SIDE_NFT_COLLECTION,
+      name: "tokenByIndex",
+      params: [idx],
+    }));
 
-  const [collectionIdsBridge] = await Promise.all([
-    multiCall(NFTCollectionMainABI, tupleBridge),
-  ]);
-  const collectionFlat = collectionIds.flat().map((el) => parseInt(el));
-  const collectionIdsBridgeFlat = collectionIdsBridge.map((el) => parseInt(el));
-  console.log("Bridge hold", collectionIdsBridgeFlat);
-  address = address.toLowerCase().substring(2);
-  const queueElement =
-    await MainCanonicalTransactionChainContract.getQueueLength();
-  const tupleQueue = new Array(parseInt(queueElement))
+  const tupleMainQueue = new Array(parseInt(mainQueueLength))
     .fill(1)
     .map((_, idx) => ({
       address: process.env.MAIN_CANONICAL_TRANSACTION_CHAIN,
       name: "getQueueElement",
       params: [idx],
     }));
-  const [listQueue] = await Promise.all([
-    multiCall(MainCanonicalTransactionChainContractArtifact.abi, tupleQueue),
-  ]);
-  const listIdmain = listQueue.flat().map((element) => {
-    return parseInt(element.message.substring(586 - 64, 586), 16);
-  });
-  console.log("listIdmain", listIdmain);
-  const listMain = listQueue.flat();
-  const sideQueueElement =
-    await SideCanonicalTransactionChainContract.getQueueLength();
-  // console.log(sideQueueElement);
-  const sideTupleQueue = new Array(parseInt(sideQueueElement))
+  const tupleSideQueue = new Array(parseInt(sideQueueLength))
     .fill(1)
     .map((_, idx) => ({
       address: process.env.SIDE_CANONICAL_TRANSACTION_CHAIN,
       name: "getQueueElement",
       params: [idx],
     }));
-  const [listSideQueue] = await Promise.all([
-    sidemultiCall(SideCanonicalTransactionChainArtifact.abi, sideTupleQueue),
-  ]);
+  let [listIdMainBridge, listIdSideCollection, listMainQueue, listSideQueue] =
+    await Promise.all([
+      multiCall(MainCollectionArtifact.abi, tupleMainBridge),
+      sidemultiCall(SideCollectionArtifact.abi, tupleSideCollection),
+      multiCall(
+        MainCanonicalTransactionChainContractArtifact.abi,
+        tupleMainQueue
+      ),
+      sidemultiCall(SideCanonicalTransactionChainArtifact.abi, tupleSideQueue),
+    ]);
+  listIdMainBridge = listIdMainBridge.flat().map((e) => parseInt(e));
+  listIdSideCollection = listIdSideCollection.flat().map((e) => parseInt(e));
+
+  const listIdMainQueue = listMainQueue.flat().map((element) => {
+    return parseInt(element.message.substring(586 - 64, 586), 16);
+  });
   const listIdSideQueue = listSideQueue.flat().map((el) => {
     return parseInt(el.message.substring(394 - 64, 394), 16);
   });
-  console.log("listIdSide", listIdSideQueue);
-  const listIdMainCopy = [...listIdmain];
+  const listUnclaimedIndex = [];
+  listIdMainQueue.filter((el, index) => {
+    let res = listIdSideQueue.indexOf(el) < 0;
+    if (!res) {
+      listIdSideQueue.splice(listIdSideQueue.indexOf(el), 1);
+    } else listUnclaimedIndex.push(index);
+    return res;
+  });
+  const listUnclaimed = listIdMainBridge.filter((el) => {
+    return listIdSideCollection.indexOf(el) < 0;
+  });
+  const collectionIdsFlattened = [];
+  listMainQueue = listMainQueue.flat();
+
+  listUnclaimedIndex.forEach((el) => {
+    if (
+      listUnclaimed.indexOf(listIdMainQueue[el]) >= 0 &&
+      listMainQueue[el].message.substring(34 + 64 * 3, 34 + 64 * 3 + 40) ===
+        address
+    ) {
+      collectionIdsFlattened.push(listIdMainQueue[el]);
+    }
+  });
+  return collectionIdsFlattened;
+}
+async function getUnclaimedOnBSC(addressRaw) {
+  let address = addressRaw;
+  address = address.toLowerCase().substring(2);
+  const [balanceOfMainBridge, mainQueueLength, sideQueueLength] =
+    await Promise.all([
+      MainCollectionContract.balanceOf(process.env.MAIN_BRIDGE),
+      MainCanonicalTransactionChainContract.getQueueLength(),
+      SideCanonicalTransactionChainContract.getQueueLength(),
+    ]);
+  const tupleMainBridge = new Array(parseInt(balanceOfMainBridge))
+    .fill(1)
+    .map((_, idx) => ({
+      address: process.env.MAIN_NFT_COLLECTION,
+      name: "tokenOfOwnerByIndex",
+      params: [process.env.MAIN_BRIDGE, idx],
+    }));
+  const tupleMainQueue = new Array(parseInt(mainQueueLength))
+    .fill(1)
+    .map((_, idx) => ({
+      address: process.env.MAIN_CANONICAL_TRANSACTION_CHAIN,
+      name: "getQueueElement",
+      params: [idx],
+    }));
+  const tupleSideQueue = new Array(parseInt(sideQueueLength))
+    .fill(1)
+    .map((_, idx) => ({
+      address: process.env.SIDE_CANONICAL_TRANSACTION_CHAIN,
+      name: "getQueueElement",
+      params: [idx],
+    }));
+  let [listIdMainBridge, listMainQueue, listSideQueue] = await Promise.all([
+    multiCall(MainCollectionArtifact.abi, tupleMainBridge),
+    multiCall(
+      MainCanonicalTransactionChainContractArtifact.abi,
+      tupleMainQueue
+    ),
+    sidemultiCall(SideCanonicalTransactionChainArtifact.abi, tupleSideQueue),
+  ]);
+  listIdMainBridge = listIdMainBridge.flat().map((e) => parseInt(e));
+  const listIdMainQueue = listMainQueue.flat().map((element) => {
+    return parseInt(element.message.substring(586 - 64, 586), 16);
+  });
+  const listIdSideQueue = listSideQueue.flat().map((el) => {
+    return parseInt(el.message.substring(394 - 64, 394), 16);
+  });
+  const listIdMainCopy = [...listIdMainQueue];
   const listIdSideQueueCopy = [...listIdSideQueue];
   listIdSideQueue.forEach((el) => {
     if (listIdMainCopy.indexOf(el) >= 0 && listIdSideQueue.indexOf(el) >= 0) {
@@ -263,10 +220,9 @@ async function getUnclaimedOnBSC(addressRaw) {
     if (
       !listIdSideQueueCopy.includes(el) &&
       !listIdMainCopy.includes(el) &&
-      !collectionFlat.includes(el) &&
       listSideQueueReverse[index].message.substring(290, 290 + 40) == address &&
       !listInsert.includes(el) &&
-      collectionIdsBridgeFlat.includes(el)
+      listIdMainBridge.includes(el)
     ) {
       if (listUnclaimed.indexOf(el) < 0) listUnclaimed.push(el);
     }

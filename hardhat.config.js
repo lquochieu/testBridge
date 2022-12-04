@@ -15,7 +15,7 @@ const INFURA_URL =
   "https://rinkeby.infura.io/v3/05ef08be7bec4c9eb35821bd02018d19";
 const KOVAN_URL = "https://kovan.infura.io/v3/ba63b223746842d89619ef053b179319";
 const GOERLI_URL =
-  "https://goerli.infura.io/v3/ba63b223746842d89619ef053b179319";
+  "https://goerli.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 module.exports = {
   solidity: "0.8.4",

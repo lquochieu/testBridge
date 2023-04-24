@@ -107,10 +107,10 @@ contract MainBridge is
         transferOwnership(_newAdmin);
     }
 
-    function setSideNFTBridge(uint256 _chainId, address _sideBridge)
-        public
-        onlyOwner
-    {
+    function setSideNFTBridge(
+        uint256 _chainId,
+        address _sideBridge
+    ) public onlyOwner {
         sideNFTBridges[_chainId] = _sideBridge;
     }
 
@@ -130,6 +130,7 @@ contract MainBridge is
       ╚══════════════════════════════╝ */
 
     /**
+     * Only deposit limited NFTCollection
      * Before depost, please check if contract support for sideChainId
      * and SideChain support for address of SideNFTCollection
      * @dev Deposit NFT Collection to the SideChain
@@ -177,6 +178,8 @@ contract MainBridge is
             "Incorect owner"
         );
 
+        require(mainNFTCollection.viewCollectionRarity(_collectionId) == Lib_DefaultValues.UNIQUE_RARITY, "only support deposit limited NFT");
+        
         require(
             supportsForNFTCollectionBridge(
                 _sideChainId,
@@ -241,8 +244,7 @@ contract MainBridge is
 
         nftCollection.chainId = getChainID();
 
-        nftCollection.collectionRarity = _mainNFTCollection
-            .viewCollectionRarity(_collectionId);
+        nftCollection.collectionRarity = Lib_DefaultValues.UNIQUE_RARITY;
         nftCollection.collectionId = _collectionId;
         nftCollection.collectionLevel = _mainNFTCollection.getCollectionLevel(
             _collectionId
@@ -250,17 +252,12 @@ contract MainBridge is
         nftCollection.collectionExperience = _mainNFTCollection
             .getCollectionExperience(_collectionId);
 
-        if (nftCollection.collectionRarity == Lib_DefaultValues.UNIQUE_RARITY) {
-            nftCollection.collectionRank = _mainNFTCollection.getUniqueRank(
-                _collectionId
-            );
-            nftCollection.collectionURL = _mainNFTCollection.getCollectionURL(
-                _collectionId
-            );
-        } else {
-            nftCollection.collectionRank = 0;
-            nftCollection.collectionURL = "";
-        }
+        nftCollection.collectionRank = _mainNFTCollection.getUniqueRank(
+            _collectionId
+        );
+        nftCollection.collectionURL = _mainNFTCollection.getCollectionURL(
+            _collectionId
+        );
 
         return nftCollection;
     }
@@ -328,11 +325,9 @@ contract MainBridge is
       ║            GETTERS           ║
       ╚══════════════════════════════╝*/
 
-    function getSideNFTBridge(uint256 _sideChainId)
-        external
-        view
-        returns (address)
-    {
+    function getSideNFTBridge(
+        uint256 _sideChainId
+    ) external view returns (address) {
         return sideNFTBridges[_sideChainId];
     }
 

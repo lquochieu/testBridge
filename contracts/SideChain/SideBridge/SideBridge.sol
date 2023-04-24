@@ -297,7 +297,7 @@ contract SideBridge is
         );
 
         sendCrossDomainMessage(
-            Lib_DefaultValues.BSC_CHAIN_ID_TESTNET,
+            Lib_DefaultValues.BSC_CHAIN_ID_MAINNET,
             mainNFTBridge,
             message
         );

@@ -8,13 +8,15 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {ISideNFTCollection} from "../../interfaces/SideChain/Tokens/ISideNFTCollection.sol";
 import {IMainBridge} from "../../interfaces/MainChain/MainBridge/IMainBridge.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
+import {BridgeManager} from "../../libraries/manager/BridgeManager.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 
 contract SideBridge is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
-    CrossDomainEnabled
+    CrossDomainEnabled,
+    BridgeManager
 {
     address internal mainNFTBridge;
 
@@ -83,7 +85,13 @@ contract SideBridge is
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
-    function initialize(address _SideGate, address _mainNFTBridge)
+    function initialize(
+        address _SideGate, 
+        address _mainNFTBridge,
+        address _botAddress,
+        address _travaAddress,
+        uint256 _bridgeFee
+    )
         public
         initializer
     {
@@ -92,6 +100,8 @@ contract SideBridge is
         mainNFTBridge = _mainNFTBridge;
 
         __CrossDomainEnabled_init(_SideGate);
+        __BridgeManager_init(_botAddress, _travaAddress, _bridgeFee);
+
         __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();
@@ -180,7 +190,7 @@ contract SideBridge is
                 _data
             );
 
-            sendCrossDomainMessage(
+            _sendCrossDomainMessage(
                 _nftCollection.mainChainId,
                 mainNFTBridge,
                 message
@@ -248,7 +258,7 @@ contract SideBridge is
         address _to,
         uint256 _collectionId,
         bytes calldata _data
-    ) external virtual onlyEOA nonReentrant whenNotPaused {
+    ) external virtual onlyEOA onlyEnoughBridgeFee nonReentrant whenNotPaused {
         _initiateWithdrawal(
             _sideNFTCollection,
             _msgSender(),
@@ -296,7 +306,9 @@ contract SideBridge is
             _data
         );
 
-        sendCrossDomainMessage(
+        _collectBridgeFee();
+        
+        _sendCrossDomainMessage(
             Lib_DefaultValues.BSC_CHAIN_ID_MAINNET,
             mainNFTBridge,
             message

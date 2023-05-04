@@ -34,7 +34,7 @@ contract CrossDomainEnabled is Initializable {
         return ICrossDomainMessenger(messenger);
     }
 
-    function sendCrossDomainMessage(
+    function _sendCrossDomainMessage(
         uint256 _chainId,
         address _crossDomainTarget,
         bytes memory _message

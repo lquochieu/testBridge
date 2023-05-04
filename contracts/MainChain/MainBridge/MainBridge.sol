@@ -7,6 +7,7 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
+import {BridgeManager} from "../../libraries/manager/BridgeManager.sol";
 import {IMainNFTCollection} from "../../interfaces/MainChain/Tokens/IMainNFTCollection.sol";
 import {ISideBridge} from "../../interfaces/SideChain/SideBridge/ISideBridge.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
@@ -15,7 +16,8 @@ contract MainBridge is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
-    CrossDomainEnabled
+    CrossDomainEnabled,
+    BridgeManager
 {
     /**
      * @param chainId chainId of SideChain
@@ -78,10 +80,17 @@ contract MainBridge is
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
-    function initialize(address _MainGate) public initializer {
+    function initialize(
+        address _MainGate,
+        address _botAddress,
+        address _travaAddress,
+        uint256 _bridgeFee
+    ) public initializer {
         require(messenger == address(0), "Contract already initialize");
 
         __CrossDomainEnabled_init(_MainGate);
+        __BridgeManager_init(_botAddress, _travaAddress, _bridgeFee);
+
         __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();
@@ -148,7 +157,7 @@ contract MainBridge is
         address _to,
         uint256 _collectionId,
         bytes calldata _data
-    ) external virtual onlyEOA nonReentrant whenNotPaused {
+    ) external virtual onlyEOA onlyEnoughBridgeFee nonReentrant whenNotPaused {
         _initialNFTDeposit(
             _mainNFTCollection,
             _sideNFTCollection,
@@ -212,7 +221,9 @@ contract MainBridge is
             _data
         );
 
-        sendCrossDomainMessage(
+        _collectBridgeFee();
+        
+        _sendCrossDomainMessage(
             _sideChainId,
             sideNFTBridges[_sideChainId],
             message

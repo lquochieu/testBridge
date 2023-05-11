@@ -7,7 +7,7 @@ const adminKey = {
   privateKey: process.env.PRIVATE_KEY,
 };
 
-const goerliProvider = new ethers.providers.InfuraProvider(
+const sideProvider = new ethers.providers.InfuraProvider(
   "goerli",
   "ba63b223746842d89619ef053b179319"
 );
@@ -20,25 +20,25 @@ const main = async () => {
   // const token = await Token.deploy();
   // await token.deployed();
   // console.log("Token deployed at: ", token.address);
-  let sideNonce = await goerliProvider.getTransactionCount(adminKey.publicKey);
+  let sideNonce = await sideProvider.getTransactionCount(adminKey.publicKey);
   let mainNonce = await ethers.provider.getTransactionCount(adminKey.publicKey);
   let mainSize = mainContract.length + mainNonce;
   let sideSize = sideContract.length + sideNonce;
   let deployedMainAddress = 0;
   let deployedSideAddress = 0;
 
-  console.log("BSC testnet: ");
-  for (let i =  0; i + mainNonce < mainSize; i++) {
+  console.log("BSC : ");
+  for (let i = 0; i + mainNonce < mainSize; i++) {
     deployedMainAddress = ethers.utils.getAddress(
-      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + 1 + mainNonce})
+      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + 1 + mainNonce })
     );
     console.log(mainContract[i], " = ", deployedMainAddress);
   }
 
-  console.log("Goerli testnet")
-  for (let i =  0; i + sideNonce < sideSize; i++) {
+  console.log("ETH testet")
+  for (let i = 0; i + sideNonce < sideSize; i++) {
     deployedSideAddress = ethers.utils.getAddress(
-      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + 1 + sideNonce})
+      ethers.utils.getContractAddress({ from: adminKey.publicKey, nonce: i + 1 + sideNonce })
     );
     console.log(sideContract[i], " = ", deployedSideAddress);
   }

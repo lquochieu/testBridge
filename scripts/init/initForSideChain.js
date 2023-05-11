@@ -39,26 +39,26 @@ const main = async () => {
   }
 
   setAddress = await rdOwnerLib_AddressManager.setGate(
-    process.env.BSC_TESTNET_CHAIN_ID,
+    process.env.BSC_CHAIN_ID,
     process.env.MAIN_GATE
   );
   await setAddress.wait();
   console.log(
     "MAIN_GATE = ",
     await rdOwnerLib_AddressManager.getGateAddress(
-      process.env.BSC_TESTNET_CHAIN_ID
+      process.env.BSC_CHAIN_ID
     )
   );
 
   setAddress = await rdOwnerLib_AddressManager.setTransactor(
-    process.env.BSC_TESTNET_CHAIN_ID,
+    process.env.BSC_CHAIN_ID,
     process.env.MAIN_TRANSACTOR
   );
   await setAddress.wait();
   console.log(
     "MAIN_TRANSACTOR = ",
     await rdOwnerLib_AddressManager.getTransactorAddress(
-      process.env.BSC_TESTNET_CHAIN_ID
+      process.env.BSC_CHAIN_ID
     )
   );
 

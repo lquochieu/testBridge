@@ -21,17 +21,7 @@ require("dotenv").config();
 
 const urlDatabase = `mongodb://${process.env.LOCAL_HOST}:27017/testBridge`;
 
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
-
-const goerliProvider = new ethers.providers.InfuraProvider(
-  "goerli",
-  process.env.ABI_KEY
-);
-
-// const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
+// const owner = new ethers.Wallet(adminKey.privateKey, sideProvider);
 
 const main = async () => {
   // const Rand = await ethers.getContractFactory("SideTransactor");

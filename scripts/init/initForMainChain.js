@@ -24,56 +24,56 @@ const main = async () => {
   const rdBridge = await RandBridge.attach(process.env.MAIN_BRIDGE);
   const rdOwnerBridge = await rdBridge.connect(mainOwner);
   // /*
-  //   Set SideBridge on goerli
+  //   Set SideBridge on ETH
   // */
-  // const setSideNFTBridge = await rdOwnerBridge.setSideNFTBridge(
-  //   process.env.GOERLI_CHAIN_ID,
-  //   process.env.SIDE_BRIDGE
-  // );
-  // await setSideNFTBridge.wait();
-  // console.log(1, await rdOwnerBridge.getSideNFTBridge(process.env.GOERLI_CHAIN_ID));
+  const setSideNFTBridge = await rdOwnerBridge.setSideNFTBridge(
+    process.env.ETH_CHAIN_ID,
+    process.env.SIDE_BRIDGE
+  );
+  await setSideNFTBridge.wait();
+  console.log(1, await rdOwnerBridge.getSideNFTBridge(process.env.ETH_CHAIN_ID));
 
-  // /*
-  //   Set NFT are being supported
-  // */
-  // const setSupportsForNFTCollectionBridge =
-  //   await rdOwnerBridge.setSupportsForNFTCollectionBridge(
-  //     true,
-  //     process.env.GOERLI_CHAIN_ID,
-  //     process.env.MAIN_NFT_COLLECTION,
-  //     process.env.SIDE_NFT_COLLECTION
-  //   );
-  // await setSupportsForNFTCollectionBridge.wait();
-  // console.log(
-  //   2,
-  //   await rdOwnerBridge.supportsForNFTCollectionBridge(
-  //     process.env.GOERLI_CHAIN_ID,
-  //     process.env.MAIN_NFT_COLLECTION,
-  //     process.env.SIDE_NFT_COLLECTION
-  //   )
-  // );
+  /*
+    Set NFT are being supported
+  */
+  const setSupportsForNFTCollectionBridge =
+    await rdOwnerBridge.setSupportsForNFTCollectionBridge(
+      true,
+      process.env.ETH_CHAIN_ID,
+      process.env.MAIN_NFT_COLLECTION,
+      process.env.SIDE_NFT_COLLECTION
+    );
+  await setSupportsForNFTCollectionBridge.wait();
+  console.log(
+    2,
+    await rdOwnerBridge.supportsForNFTCollectionBridge(
+      process.env.ETH_CHAIN_ID,
+      process.env.MAIN_NFT_COLLECTION,
+      process.env.SIDE_NFT_COLLECTION
+    )
+  );
 
-  // /*
-  //   Lib_AddressManager
-  // */
-  // const RandLib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
-  // const rdLib_AddressManager = await RandLib_AddressManager.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
-  // const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(owner);
+  /*
+    Lib_AddressManager
+  */
+  const RandLib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
+  const rdLib_AddressManager = await RandLib_AddressManager.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
+  const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(owner);
 
-  // let setAddress;
-  // for(let i = 0; i < addressContract.length; i++) {
-  //   setAddress = await rdOwnerLib_AddressManager.setAddress(addressContract[i], process.env[envAddressContract[i]], {gasLimit: BigInt(1e7)});
-  //   await setAddress.wait();
-  //   console.log(i+3, addressContract[i], await rdOwnerLib_AddressManager.getAddress(addressContract[i]));
-  // }
+  let setAddress;
+  for(let i = 0; i < addressContract.length; i++) {
+    setAddress = await rdOwnerLib_AddressManager.setAddress(addressContract[i], process.env[envAddressContract[i]], {gasLimit: BigInt(1e7)});
+    await setAddress.wait();
+    console.log(i+3, addressContract[i], await rdOwnerLib_AddressManager.getAddress(addressContract[i]));
+  }
 
-  // setAddress = await rdOwnerLib_AddressManager.setGate(process.env.GOERLI_CHAIN_ID, process.env.SIDE_GATE);
-  // await setAddress.wait();
-  // console.log("SIDE_GATE = ", await rdOwnerLib_AddressManager.getGateAddress(process.env.GOERLI_CHAIN_ID));
+  setAddress = await rdOwnerLib_AddressManager.setGate(process.env.ETH_CHAIN_ID, process.env.SIDE_GATE);
+  await setAddress.wait();
+  console.log("SIDE_GATE = ", await rdOwnerLib_AddressManager.getGateAddress(process.env.ETH_CHAIN_ID));
 
-  // setAddress = await rdOwnerLib_AddressManager.setTransactor(process.env.GOERLI_CHAIN_ID, process.env.SIDE_TRANSACTOR);
-  // await setAddress.wait();
-  // console.log("SIDE_TRANSACTOR = ", await rdOwnerLib_AddressManager.getTransactorAddress(process.env.GOERLI_CHAIN_ID));
+  setAddress = await rdOwnerLib_AddressManager.setTransactor(process.env.ETH_CHAIN_ID, process.env.SIDE_TRANSACTOR);
+  await setAddress.wait();
+  console.log("SIDE_TRANSACTOR = ", await rdOwnerLib_AddressManager.getTransactorAddress(process.env.ETH_CHAIN_ID));
 
   // /*
   //   NFTCollection

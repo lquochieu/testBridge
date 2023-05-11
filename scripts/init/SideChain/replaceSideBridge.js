@@ -1,29 +1,14 @@
 const { ethers } = require("hardhat");
+const { sideOwner } = require("../../sdk/rdOwner");
+// const { rdOwnerSideNFTCollection } = require("../../sdk/rdOwner");
 
 require("dotenv").config();
 
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
-
-const receiverKey = {
-  publicKey: process.env.PUBLIC_KEY_RECEIVER,
-  privateKey: process.env.PRIVATE_KEY_RECEIVER,
-};
-
-const goerliProvider = new ethers.providers.InfuraProvider(
-  "goerli",
-  process.env.ABI_KEY
-);
-
-const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
-const receiver = new ethers.Wallet(receiverKey.privateKey, goerliProvider);
-
 const main = async () => {
+  // const rdOwner = await rdOwnerSideNFTCollection();
   const Rand = await ethers.getContractFactory("SideNFTCollection");
   const rd = await Rand.attach(process.env.SIDE_NFT_COLLECTION);
-  const rdOwner = await rd.connect(owner);
+  const rdOwner = await rd.connect(sideOwner);
 
   const updateSideBridge = await rdOwner.updateSideBridge(process.env.SIDE_BRIDGE);
   await updateSideBridge.wait();

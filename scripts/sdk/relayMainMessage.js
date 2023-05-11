@@ -64,7 +64,7 @@ const main = async () => {
         { collectionId: _collectionId },
         {
           $set: {
-            chainId: process.env.BSC_TESTNET_CHAIN_ID,
+            chainId: process.env.BSC_CHAIN_ID,
             address: _mainNFTCollection,
             status: 0
           }
@@ -76,7 +76,7 @@ const main = async () => {
   SideGateContract.on("SentMessage", async (_target, _sender, _message, _nonce, event) => {
     let deadline = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
     let signature = await genSignature(
-      97,
+      process.env.BSC_CHAIN_ID,
       _target,
       _sender,
       _message,

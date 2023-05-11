@@ -1,18 +1,19 @@
 const { ethers } = require("hardhat");
+const { sideOwner } = require("../../sdk/rdOwner");
 
 require("dotenv").config();
 
-const adminKey = {
-  publicKey: process.env.PUBLIC_KEY,
-  privateKey: process.env.PRIVATE_KEY,
-};
+// const adminKey = {
+//   publicKey: process.env.PUBLIC_KEY,
+//   privateKey: process.env.PRIVATE_KEY,
+// };
 
-const goerliProvider = new ethers.providers.InfuraProvider(
-  "goerli",
-  process.env.ABI_KEY
-);
+// const sideProvider = new ethers.providers.InfuraProvider(
+//   "goerli",
+//   process.env.ABI_KEY
+// );
 
-const owner = new ethers.Wallet(adminKey.privateKey, goerliProvider);
+// const owner = new ethers.Wallet(adminKey.privateKey, sideProvider);
 
 const addressContract = [
   "SideBridge",
@@ -26,12 +27,13 @@ const envAddressContract = [
 ];
 
 const main = async () => {
+  // const rdOwner = await rdOwnerSideLib_AddressManager()
   const Rand = await ethers.getContractFactory("Lib_AddressManager");
   const rd = await Rand.attach(process.env.SIDE_LIB_ADDRESS_MANAGER);
-  const rdOwner = await rd.connect(owner);
+  const rdOwner = await rd.connect(sideOwner);
 
   let setAddress;
-  for (let i = 0; i < addressContract.length-2; i++) {
+  for (let i = 0; i < addressContract.length - 2; i++) {
     setAddress = await rdOwner.setAddress(
       addressContract[i],
       process.env[envAddressContract[i]]
@@ -44,23 +46,23 @@ const main = async () => {
   }
 
   // setAddress = await rdOwner.setGate(
-  //   process.env.BSC_TESTNET_CHAIN_ID,
+  //   process.env.BSC_CHAIN_ID,
   //   process.env.MAIN_GATE
   // );
   // await setAddress.wait();
   // console.log(
   //   "MAIN_GATE = ",
-  //   await rdOwner.getGateAddress(process.env.BSC_TESTNET_CHAIN_ID)
+  //   await rdOwner.getGateAddress(process.env.BSC_CHAIN_ID)
   // );
 
   // setAddress = await rdOwner.setTransactor(
-  //   process.env.BSC_TESTNET_CHAIN_ID,
+  //   process.env.BSC_CHAIN_ID,
   //   process.env.MAIN_TRANSACTOR
   // );
   // await setAddress.wait();
   // console.log(
   //   "MAIN_TRANSACTOR = ",
-  //   await rdOwner.getTransactorAddress(process.env.BSC_TESTNET_CHAIN_ID)
+  //   await rdOwner.getTransactorAddress(process.env.BSC_CHAIN_ID)
   // );
 };
 

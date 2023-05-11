@@ -4,8 +4,6 @@ require("dotenv").config();
 async function main () {
     const MainTransactor = await ethers.getContractFactory("MainTransactor");
     const mainTransactor = await upgrades.deployProxy(MainTransactor, [
-      "MainTransactor",
-      "1",
       process.env.MAIN_LIB_ADDRESS_MANAGER
     ]);
 

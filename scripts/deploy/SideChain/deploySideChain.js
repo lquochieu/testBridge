@@ -30,6 +30,10 @@ async function main() {
   const sideBridge = await upgrades.deployProxy(SideBridge, [
     sideGate.address,
     process.env.MAIN_BRIDGE,
+    process.env.MAIN_BRIDGE,
+    process.env.SIDE_BOT_ADDRESS,
+    process.env.SIDE_TRAVA_ADDRESS,
+    process.env.SIDE_BRIDGE_FEE
   ]);
   await sideBridge.deployed();
   console.log("SideBridge deployed at: ", sideBridge.address);

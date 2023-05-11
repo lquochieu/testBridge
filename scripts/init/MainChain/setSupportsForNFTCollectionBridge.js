@@ -11,7 +11,7 @@ const main = async () => {
   const setSupportsForNFTCollectionBridge =
     await rdOwner.setSupportsForNFTCollectionBridge(
       true,
-      process.env.GOERLI_CHAIN_ID,
+      process.env.ETH_CHAIN_ID,
       process.env.MAIN_NFT_COLLECTION,
       process.env.SIDE_NFT_COLLECTION
     );
@@ -19,7 +19,7 @@ const main = async () => {
   console.log(
     1,
     await rdOwner.supportsForNFTCollectionBridge(
-      process.env.GOERLI_CHAIN_ID,
+      process.env.ETH_CHAIN_ID,
       process.env.MAIN_NFT_COLLECTION,
       process.env.SIDE_NFT_COLLECTION
     )

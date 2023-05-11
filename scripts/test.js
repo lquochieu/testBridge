@@ -6,7 +6,7 @@ const adminKey = {
     privateKey: process.env.PRIVATE_KEY,
 };
 
-const goerliProvider = new ethers.providers.InfuraProvider(
+const sideProvider = new ethers.providers.InfuraProvider(
     "goerli",
     process.env.ABI_KEY
 );

@@ -6,9 +6,9 @@ async function main() {
   const sideBridge = await upgrades.deployProxy(SideBridge, [
     process.env.SIDE_GATE,
     process.env.MAIN_BRIDGE,
-    process.env.BOT_ADDRESS,
-    process.env.TRAVA_ADDRESS,
-    process.env.BRIDGE_FEE
+    process.env.SIDE_BOT_ADDRESS,
+    process.env.SIDE_TRAVA_ADDRESS,
+    process.env.SIDE_BRIDGE_FEE
   ]);
 
   await sideBridge.deployed();

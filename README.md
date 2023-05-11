@@ -1,4 +1,57 @@
+When deploy mainnet, please change:
+- Contract 
++ file contracts/constant/Lib_DefaultValues.sol
+ change field **BSC_CHAIN_ID_MAINNET**
+
+- Scripts
++ scripts/sdk/rdOwner.js
+ change sideProvider from goerli to eth
+
+- Env
+see ENV_EXAMPLE
+change ETH_CHAIN_ID, BSC_CHAIN_ID
+
+## Quick Use
+See .env_example and set some information
++ ABI_KEY
++ PRIVATE_KEY
+
++ MAIN_BOT_ADRESS : address will receive trava fee when deposit on BSC
++ MAIN_TRAVA_ADDRESS: address of trava on BSC
++ MAIN_BRIDGE_FEE: fee when deposit NFT
+
++ SIDE_BOT_ADRESS : address will receive trava fee when withdraw on ETH
++ SIDE_TRAVA_ADDRESS: address of trava on ETH
++ SIDE_BRIDGE_FEE: fee when withdraw NFT
+Then Deploy
+```
+node scripts/deploy/MainChain/deployMainChain.js
+```
+Write these address contract has just been deployed to .env file. Then
+```
+node scripts/deploy/SideChain/deploySideChain.js
+```
+Write these address contract has just been deployed to .env file. After that, initiate some contracts
+```
+node scripts/init/initForMainChain.js
+node scripts/init/initForSideChain.js
+```
 ### deploy contracts:
+Deploy BSC contract first before deploying ETH contract
+
+#### deploy BSC Contract
+
+Before Deploy MainBridge on BSC, fill these fields below in file .env
+ABI_KEY
+PRIVATE_KEY
+
++ MAIN_BOT_ADRESS : address will receive trava fee when deposit on BSC
++ MAIN_TRAVA_ADDRESS: address of trava on BSC
++ MAIN_BRIDGE_FEE: fee when deposit NFT
+
+Run file scripts/deploy/MainChain/deployMainChain.js for deploying all contract on BSC
+
+If you want to deploy each contract, please deploy these contracts in the order below. After deploy each contract, write its addres into .env file before deploying the other contract
 
 MainChain
 ```
@@ -6,12 +59,42 @@ Lib_AddressManager (./contracts/libraries/resolver/Lib_AddressManager.sol)
 MainGate (./contracts/MainChain/MainBridge/MainGate.sol)
 MainBridge (./contracts/MainChain/MainBridge/MainBridge.sol)
 MainNFTCollection (./contracts/MainChain/Tokens/MainNFTCollection.sol)
-CanonicalTransactionChain (./contracts/MainChain/MainBridge/CanonicalTransactionChain.sol)
-Transactor  (./libraries//universal/Transactor.sol)
+MaiCanonicalTransactionChain (./contracts/MainChain/MainBridge/MaiCanonicalTransactionChain.sol)
+MainTransactor  (./libraries//universal/MainTransactor.sol)
 ```
-At SideChain , we will deploy it like MainChain
+#### deploy ETH Contract
+Before Deploy SideBridge on ETH, fill these fields below in file .env
++ MAIN_LIB_ADDRESS_MANAGER
++ MAIN_BRIDGE
++ MAIN_GATE
++ MAIN_TRANSACTOR
++ MAIN_CANONICAL_TRANSACTION_CHAIN
+
++ SIDE_BOT_ADRESS : address will receive trava fee when withdraw on ETH
++ SIDE_TRAVA_ADDRESS: address of trava on ETH
++ SIDE_BRIDGE_FEE: fee when withdraw NFT
+
+Run file scripts/deploy/SideChain/deploySideChain.js for deploying all contract on ETH
+If you want to deploy each contract, please deploy these contracts in the order below. After deploy each contract, write its addres into .env file before deploying the other contract
+
+Remember write these address to .env file
+```
+Lib_AddressManager (./contracts/libraries/resolver/Lib_AddressManager.sol)
+SideGate (./contracts/SideChain/SideBridge/SideGate.sol)
+SideBridge (./contracts/SideChain/SideBridge/SideBridge.sol)
+SideNFTCollection (./contracts/SideChain/Tokens/SideNFTCollection.sol)
+SideCanonicalTransactionChain (./contracts/SideChain/SideBridge/SideCanonicalTransactionChain.sol)
+SideTransactor  (./libraries//universal/SideTransactor.sol)
+```
+
 ### Initiate
-Next, initiate some contracts:
+After deloying contract, initiate some contracts.
+
+Run file 
+```
+scripts/init/initForMainChain.js
+scripts/init/initForSideChain.js
+```
 ```
 MainBridge (main)
 MainGate (main)

@@ -7,20 +7,20 @@ const adminKey = {
   privateKey: process.env.PRIVATE_KEY,
 };
 
-const receiverKey = {
-  publicKey: process.env.PUBLIC_KEY_RECEIVER,
-  privateKey: process.env.PRIVATE_KEY_RECEIVER,
-};
+// const receiverKey = {
+//   publicKey: process.env.PUBLIC_KEY_RECEIVER,
+//   privateKey: process.env.PRIVATE_KEY_RECEIVER,
+// };
 
-const goerliProvider = new ethers.providers.InfuraProvider(
-  "goerli",
-  process.env.ABI_KEY
-);
+// const sideProvider = new ethers.providers.InfuraProvider(
+//   "goerli",
+//   process.env.ABI_KEY
+// );
 
-const ownerBSC = new ethers.Wallet(adminKey.privateKey, ethers.provider);
-const ownerETH = new ethers.Wallet(adminKey.privateKey, goerliProvider);
+// const ownerBSC = new ethers.Wallet(adminKey.privateKey, ethers.provider);
+// const ownerETH = new ethers.Wallet(adminKey.privateKey, sideProvider);
 
-const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
+// const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 
 const main = async () => {
   /*
@@ -37,16 +37,16 @@ const main = async () => {
   const rdBridge = await RandBridge.attach(process.env.MAIN_BRIDGE);
   const rdOwnerBridge = await rdBridge.connect(owner);
   /*
-    Set SideBridge on goerli
+    Set SideBridge on ETH
   */
   const setSideNFTBridge = await rdOwnerBridge.setSideNFTBridge(
-    process.env.GOERLI_CHAIN_ID,
+    process.env.ETH_CHAIN_ID,
     process.env.SIDE_BRIDGE
   );
   await setSideNFTBridge.wait();
   console.log(
     1,
-    await rdOwnerBridge.getSideNFTBridge(process.env.GOERLI_CHAIN_ID)
+    await rdOwnerBridge.getSideNFTBridge(process.env.ETH_CHAIN_ID)
   );
 
   /*
@@ -55,7 +55,7 @@ const main = async () => {
   const setSupportsForNFTCollectionBridge =
     await rdOwnerBridge.setSupportsForNFTCollectionBridge(
       true,
-      process.env.GOERLI_CHAIN_ID,
+      process.env.ETH_CHAIN_ID,
       process.env.MAIN_NFT_COLLECTION,
       process.env.SIDE_NFT_COLLECTION
     );
@@ -63,7 +63,7 @@ const main = async () => {
   console.log(
     2,
     await rdOwnerBridge.supportsForNFTCollectionBridge(
-      process.env.GOERLI_CHAIN_ID,
+      process.env.ETH_CHAIN_ID,
       process.env.MAIN_NFT_COLLECTION,
       process.env.SIDE_NFT_COLLECTION
     )
@@ -123,7 +123,7 @@ const main = async () => {
     )
   );
 
-  
+
 };
 
 main()

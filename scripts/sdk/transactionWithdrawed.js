@@ -25,7 +25,7 @@ const addSideSentMessageValue = async (nonce, expireTime) => {
     let timestampDeposited = (await SideCanonicalTransactionChainContract.queryFilter("TransactorEvent", blockNumber, blockNumber))[0].args.timestamp.toNumber() * 1000;
     let deadline = timestampDeposited + expireTime;
     let signature = await genSignature(
-        process.env.BSC_TESTNET_CHAIN_ID,
+        process.env.BSC_CHAIN_ID,
         event.target,
         event.sender,
         event.message,
@@ -66,7 +66,7 @@ const addPrepareWithdrawNFTCollectionValue = async (nonce, status) => {
                 { collectionId: event.collectionId.toNumber() },
                 {
                     $set: {
-                        chainId: process.env.BSC_TESTNET_CHAIN_ID,
+                        chainId: process.env.BSC_CHAIN_ID,
                         address: event.mainNFTCollection,
                         status: status
                     }
@@ -80,7 +80,7 @@ const addPrepareWithdrawNFTCollectionValue = async (nonce, status) => {
         }
     } else {
         await PrepareNFTCollectionModel.create({
-            chainId: process.env.BSC_TESTNET_CHAIN_ID,
+            chainId: process.env.BSC_CHAIN_ID,
             address: event.mainNFTCollection,
             status: status
         })

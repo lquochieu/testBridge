@@ -21,7 +21,7 @@ module.exports = {
   solidity: "0.8.4",
   defaultNetwork: "bscTestnet",
   networks: {
-    bscTestnet: {
+    bscBSC_CHAIN_ID: {
       url: "https://data-seed-prebsc-1-s1.binance.org:8545/",
       chainId: 97,
       accounts: [`0x${PRIVATE_KEY}`],

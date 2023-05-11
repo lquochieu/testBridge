@@ -12,13 +12,13 @@ const receiverKey = {
   privateKey: process.env.PRIVATE_KEY_RECEIVER,
 };
 
-const goerliProvider = new ethers.providers.InfuraProvider(
+const sideProvider = new ethers.providers.InfuraProvider(
   "goerli",
   process.env.ABI_KEY
 );
 
 const ownerBSC = new ethers.Wallet(adminKey.privateKey, ethers.provider);
-const ownerETH = new ethers.Wallet(adminKey.privateKey, goerliProvider);
+const ownerETH = new ethers.Wallet(adminKey.privateKey, sideProvider);
 
 const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 
@@ -41,13 +41,13 @@ const main = async () => {
 
   let setAddress;
   setAddress = await rdOwnerBSC.setTransactor(
-    process.env.GOERLI_CHAIN_ID,
+    process.env.ETH_CHAIN_ID,
     process.env.SIDE_TRANSACTOR
   );
   await setAddress.wait();
   console.log(
     "SIDE_TRANSACTOR = ",
-    await rdOwnerBSC.getTransactorAddress(process.env.GOERLI_CHAIN_ID)
+    await rdOwnerBSC.getTransactorAddress(process.env.ETH_CHAIN_ID)
   );
 
   /*
@@ -68,13 +68,13 @@ const main = async () => {
   );
 
   setAddress = await rdOwnerETH.setTransactor(
-    process.env.GOERLI_CHAIN_ID,
+    process.env.ETH_CHAIN_ID,
     process.env.SIDE_TRANSACTOR
   );
   await setAddress.wait();
   console.log(
     "SIDE_TRANSACTOR = ",
-    await rdOwnerBSC.getTransactorAddress(process.env.GOERLI_CHAIN_ID)
+    await rdOwnerBSC.getTransactorAddress(process.env.ETH_CHAIN_ID)
   );
 };
 

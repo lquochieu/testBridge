@@ -1,5 +1,5 @@
 "use strict";
-exports.goerliProvider = exports.MainBridgeContract = exports.MainGateContract = exports.MainCanonicalTransactionChainContract = exports.SideBridgeContract = exports.SideGateContract = exports.SideCanonicalTransactionChainContract = void 0;
+exports.sideProvider = exports.MainBridgeContract = exports.MainGateContract = exports.MainCanonicalTransactionChainContract = exports.SideBridgeContract = exports.SideGateContract = exports.SideCanonicalTransactionChainContract = void 0;
 
 const { ethers } = require("hardhat");
 const MainBridgeArtifact = require("../../artifacts/contracts/MainChain/MainBridge/MainBridge.sol/MainBridge.json");
@@ -8,7 +8,7 @@ const MainCanonicalTransactionChainContractArtifact = require("../../artifacts/c
 const SideBridgeArtifact = require("../../artifacts/contracts/SideChain/SideBridge/SideBridge.sol/SideBridge.json");
 const SideGateArtifact = require("../../artifacts/contracts/SideChain/SideBridge/SideGate.sol/SideGate.json");
 const SideCanonicalTransactionChainArtifact = require("../../artifacts/contracts/SideChain/SideBridge/SideCanonicalTransactionChain.sol/SideCanonicalTransactionChain.json");
-const { goerliProvider } = require("./rdOwner");
+const { sideProvider } = require("./rdOwner");
 
 require("dotenv").config();
 
@@ -47,7 +47,7 @@ const getSideBridgeContract = () => {
     return new ethers.Contract(
         process.env.SIDE_BRIDGE,
         SideBridgeArtifact.abi,
-        goerliProvider
+        sideProvider
     );
 }
 const SideBridgeContract = getSideBridgeContract();
@@ -57,7 +57,7 @@ const getSideGateContract = () => {
     return new ethers.Contract(
         process.env.SIDE_GATE,
         SideGateArtifact.abi,
-        goerliProvider
+        sideProvider
     );
 }
 const SideGateContract = getSideGateContract();
@@ -67,7 +67,7 @@ const getSideCanonicalTransactionChainContract = () => {
     return new ethers.Contract(
         process.env.SIDE_CANONICAL_TRANSACTION_CHAIN,
         SideCanonicalTransactionChainArtifact.abi,
-        goerliProvider
+        sideProvider
     );
 }
 const SideCanonicalTransactionChainContract = getSideCanonicalTransactionChainContract();

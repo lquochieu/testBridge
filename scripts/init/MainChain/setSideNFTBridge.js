@@ -9,11 +9,11 @@ const main = async () => {
   const rdOwner = await rd.connect(mainOwner);
 
   const setSideNFTBridge = await rdOwner.setSideNFTBridge(
-    process.env.GOERLI_CHAIN_ID,
+    process.env.ETH_CHAIN_ID,
     process.env.SIDE_BRIDGE
   );
   await setSideNFTBridge.wait();
-  console.log(1, await rdOwner.getSideNFTBridge(process.env.GOERLI_CHAIN_ID));
+  console.log(1, await rdOwner.getSideNFTBridge(process.env.ETH_CHAIN_ID));
 };
 
 main()

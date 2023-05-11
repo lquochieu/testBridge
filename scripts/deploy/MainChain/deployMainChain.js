@@ -27,7 +27,12 @@ async function main() {
     Deploy MainBridge.sol
   */
   const MainBridge = await ethers.getContractFactory("MainBridge");
-  const mainBridge = await upgrades.deployProxy(MainBridge, [mainGate.address]);
+  const mainBridge = await upgrades.deployProxy(MainBridge, [
+    mainGate.address,
+    process.env.MAIN_BOT_ADDRESS,
+    process.env.MAIN_TRAVA_ADDRESS,
+    process.env.MAIN_BRIDGE_FEE
+  ]);
   await mainBridge.deployed();
   console.log("MainBridge deployed at: ", mainBridge.address);
 

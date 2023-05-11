@@ -1,5 +1,5 @@
 const { ethers } = require("hardhat");
-const { mainOwner } = require("../../sdk/provider");
+const { mainOwner } = require("../../sdk/rdOwner");
 
 require("dotenv").config();
 
@@ -17,13 +17,13 @@ const main = async () => {
     console.log(addressContract[i], await rdOwner.getAddress(addressContract[i]));
   }
 
-  // setAddress = await rdOwner.setGate(process.env.GOERLI_CHAIN_ID, process.env.SIDE_GATE);
+  // setAddress = await rdOwner.setGate(process.env.ETH_CHAIN_ID, process.env.SIDE_GATE);
   // await setAddress.wait();
-  // console.log("SIDE_GATE = ", await rdOwner.getGateAddress(process.env.GOERLI_CHAIN_ID));
+  // console.log("SIDE_GATE = ", await rdOwner.getGateAddress(process.env.ETH_CHAIN_ID));
 
-  // setAddress = await rdOwner.setTransactor(process.env.GOERLI_CHAIN_ID, process.env.SIDE_TRANSACTOR);
+  // setAddress = await rdOwner.setTransactor(process.env.ETH_CHAIN_ID, process.env.SIDE_TRANSACTOR);
   // await setAddress.wait();
-  // console.log("SIDE_TRANSACTOR = ", await rdOwner.getTransactorAddress(process.env.GOERLI_CHAIN_ID));
+  // console.log("SIDE_TRANSACTOR = ", await rdOwner.getTransactorAddress(process.env.ETH_CHAIN_ID));
   // const setAddressMainBridge = await rdOwner.setAddress("MainBridge", process.env.MAIN_BRIDGE);
   // await setAddressMainBridge.wait();
   // console.log(1, setAddressMainBridge);

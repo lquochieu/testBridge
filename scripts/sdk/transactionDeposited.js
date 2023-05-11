@@ -52,9 +52,9 @@ const addPrepareDepositNFTCollectionValue = async (nonce, status) => {
     let event = await getNFTDepositInitiatedEvent(nonce);
     // console.log(event);
     if ((await PrepareNFTCollectionModel.find({ collectionId: event.nftCollection.collectionId.toNumber() })).length) {
-        
+
         const networkNFTCollection = await checkNetworkNFTCollection(event.nftCollection.collectionId);
-        if (networkNFTCollection.chainId == process.env.BSC_TESTNET_CHAIN_ID) {
+        if (networkNFTCollection.chainId == process.env.BSC_CHAIN_ID) {
 
             await PrepareNFTCollectionModel.updateOne(
                 { collectionId: event.nftCollection.collectionId.toNumber() },

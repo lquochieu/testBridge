@@ -12,24 +12,24 @@ const receiverKey = {
   privateKey: process.env.PRIVATE_KEY_RECEIVER,
 };
 
-const goerliProvider = new ethers.providers.InfuraProvider(
+const sideProvider = new ethers.providers.InfuraProvider(
   "goerli",
   process.env.ABI_KEY
 );
 
 const ownerBSC = new ethers.Wallet(adminKey.privateKey, ethers.provider);
-const ownerETH = new ethers.Wallet(adminKey.privateKey, goerliProvider);
+const ownerETH = new ethers.Wallet(adminKey.privateKey, sideProvider);
 
-const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
+// const receiver = new ethers.Wallet(receiverKey.privateKey, ethers.provider);
 
 const main = async () => {
   const MainTransactor = await ethers.getContractFactory("MainTransactor");
-    const mainTransactor = await upgrades.deployProxy(MainTransactor, [
-      process.env.MAIN_LIB_ADDRESS_MANAGER
-    ]);
+  const mainTransactor = await upgrades.deployProxy(MainTransactor, [
+    process.env.MAIN_LIB_ADDRESS_MANAGER
+  ]);
 
-    await mainTransactor.deployed();
-    console.log("MainTransactor deployed at: ", mainTransactor.address);
+  await mainTransactor.deployed();
+  console.log("MainTransactor deployed at: ", mainTransactor.address);
   /*
      Set Side Transactor in Goerli
    */
@@ -39,13 +39,13 @@ const main = async () => {
 
   let setAddress;
   setAddress = await rdOwnerETH.setTransactor(
-    process.env.GOERLI_CHAIN_ID,
+    process.env.ETH_CHAIN_ID,
     mainTransactor.address
   );
   await setAddress.wait();
   console.log(
     "MAIN_TRANSACTOR = ",
-    await rdOwnerETH.getTransactorAddress(process.env.GOERLI_CHAIN_ID)
+    await rdOwnerETH.getTransactorAddress(process.env.ETH_CHAIN_ID)
   );
 
   /*
@@ -66,13 +66,13 @@ const main = async () => {
   );
 
   setAddress = await rdOwnerBSC.setTransactor(
-    process.env.BSC_TESTNET_CHAIN_ID,
+    process.env.BSC_CHAIN_ID,
     mainTransactor.address
   );
   await setAddress.wait();
   console.log(
     "MAIN_TRANSACTOR = ",
-    await rdOwnerBSC.getTransactorAddress(process.env.BSC_TESTNET_CHAIN_ID)
+    await rdOwnerBSC.getTransactorAddress(process.env.BSC_CHAIN_ID)
   );
 };
 

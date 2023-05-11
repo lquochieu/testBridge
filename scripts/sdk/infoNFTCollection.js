@@ -8,12 +8,12 @@ const { mainOwner, sideOwner, rdOwnerMainNFTCollection, rdOwnerSideNFTCollection
 require("dotenv").config();
 
 const getMetadataNFTColletion = async (collectionId) => {
-    const rdOwnerMainNFTCollection = await rdOwnerMainNFTCollection();
-    let rarity = await rdOwnerMainNFTCollection.viewCollectionRarity(collectionId);
-    let level = await rdOwnerMainNFTCollection.getCollectionLevel(collectionId);
-    let experience = await rdOwnerMainNFTCollection.getCollectionExperience(collectionId);
-    let rank = rarity < 5 ? 1 : (await rdOwnerMainNFTCollection.getUniqueRank(collectionId));
-    let url = await rdOwnerMainNFTCollection.getCollectionURL(collectionId);
+    const rdOwner = await rdOwnerMainNFTCollection();
+    let rarity = await rdOwner.viewCollectionRarity(collectionId);
+    let level = await rdOwner.getCollectionLevel(collectionId);
+    let experience = await rdOwner.getCollectionExperience(collectionId);
+    let rank = rarity < 5 ? 1 : (await rdOwner.getUniqueRank(collectionId));
+    let url = await rdOwner.getCollectionURL(collectionId);
     return {
         rarity: rarity,
         level: level,
@@ -49,7 +49,7 @@ const ownerNFTCollectionOnSideChain = async (collectionId, sideChainId) => {
 exports.ownerNFTCollectionOnSideChain = ownerNFTCollectionOnSideChain;
 
 const checkNetworkNFTCollection = async (collectionId) => {
-    let chainId = process.env.BSC_TESTNET_CHAIN_ID;
+    let chainId = process.env.BSC_CHAIN_ID;
     let mainStatus = 0;
     let sideStatus = 0;
 
@@ -66,11 +66,11 @@ const checkNetworkNFTCollection = async (collectionId) => {
             return 0;
         } else {
             sideStatus = 1;
-            chainId = process.env.GOERLI_CHAINID;
+            chainId = process.env.ETH_CHAIN_ID;
         }
     } else {
         if (mainStatus == 0) {
-            chainId = process.env.GOERLI_CHAINID;
+            chainId = process.env.ETH_CHAIN_ID;
         }
         sideStatus = 0;
     }
@@ -128,9 +128,9 @@ const updateInfoPrepareNFTCollection = async (collectionId) => {
     if (inforNFTCollection == 0) {
         return 0;
     } else {
-        if (inforNFTCollection.chainId == process.env.BSC_TESTNET_CHAIN_ID) {
+        if (inforNFTCollection.chainId == process.env.BSC_CHAIN_ID) {
             if (sideStatus == 1) {
-                
+
             }
         }
     }

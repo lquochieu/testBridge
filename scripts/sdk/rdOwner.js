@@ -1,6 +1,6 @@
 
 "use strict";
-exports.goerliProvider = exports.mainOwner = exports.sideOwner = exports.rdOwnerMainBridge = exports.rdOwnerMainGate = exports.rdOwnerMainCanonicalTransactionChain = exports.rdOwnerMainTransactor = exports.rdOwnerMainNFTCollection = exports.rdOwnerSideBridge = exports.rdOwnerSideGate = exports.rdOwnerSideCanonicalTransactionChain = exports.rdOwnerSideTransactor = exports.rdOwnerSideNFTCollection = void 0;
+exports.sideProvider = exports.mainOwner = exports.sideOwner = exports.rdOwnerMainBridge = exports.rdOwnerMainGate = exports.rdOwnerMainCanonicalTransactionChain = exports.rdOwnerMainTransactor = exports.rdOwnerMainNFTCollection = exports.rdOwnerSideLib_AddressManager = exports.rdOwnerSideBridge = exports.rdOwnerSideGate = exports.rdOwnerSideCanonicalTransactionChain = exports.rdOwnerSideTransactor = exports.rdOwnerSideNFTCollection = void 0;
 
 const { ethers } = require("hardhat");
 
@@ -11,15 +11,15 @@ const adminKey = {
     privateKey: process.env.PRIVATE_KEY,
 };
 
-const getGoerliProvider = () => {
+const getSideProvider = () => {
     return new ethers.providers.InfuraProvider(
         "goerli",
         process.env.ABI_KEY
     );
 
 }
-const goerliProvider = getGoerliProvider();
-exports.goerliProvider = goerliProvider;
+const sideProvider = getSideProvider();
+exports.sideProvider = sideProvider;
 
 const getMainOwner = () => {
     return new ethers.Wallet(adminKey.privateKey, ethers.provider);
@@ -28,7 +28,7 @@ const mainOwner = getMainOwner();
 exports.mainOwner = mainOwner;
 
 const getSideOwner = () => {
-    return new ethers.Wallet(adminKey.privateKey, goerliProvider);
+    return new ethers.Wallet(adminKey.privateKey, sideProvider);
 }
 const sideOwner = getSideOwner();
 exports.sideOwner = sideOwner;
@@ -80,7 +80,13 @@ exports.rdOwnerMainNFTCollection = rdOwnerMainNFTCollection
 /*  ╔══════════════════════════════╗
     ║        Owner SideChain       ║
     ╚══════════════════════════════╝ */
-
+const rdOwnerSideLib_AddressManager = async () => {
+    const RandSideLib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
+    const rdSideLib_AddressManager = RandSideLib_AddressManager.attach(process.env.SIDE_LIB_ADDRESS_MANAGER);
+    const rdOwnerSideLib_AddressManager = rdSideLib_AddressManager.connect(sideOwner);
+    return rdOwnerSideLib_AddressManager;
+}
+exports.rdOwnerSideLib_AddressManager = rdOwnerSideLib_AddressManager
 
 const rdOwnerSideBridge = async () => {
     const RandSideBridge = await ethers.getContractFactory("SideBridge");

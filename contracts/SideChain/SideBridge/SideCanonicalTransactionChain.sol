@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
 import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
 contract SideCanonicalTransactionChain is
-    Lib_AddressResolver,
-    OwnableUpgradeable,
-    PausableUpgradeable,
-    ReentrancyGuardUpgradeable
+    Ownable,
+    Pausable,
+    ReentrancyGuard,
+    Lib_AddressResolver
 {
     Lib_OVMCodec.QueueElement[] queueElements;
 
@@ -46,18 +46,20 @@ contract SideCanonicalTransactionChain is
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
-    function initialize(address _libAddressManager) public initializer {
-        require(
-            address(libAddressManager) == address(0),
-            "MainGate already intialized"
-        );
+    constructor(address _libAddressManager) Lib_AddressResolver(_libAddressManager) {}
+    
+    // function initialize(address _libAddressManager) public initializer {
+    //     require(
+    //         address(libAddressManager) == address(0),
+    //         "MainGate already intialized"
+    //     );
 
-        __Lib_AddressResolver_init(_libAddressManager);
-        __Context_init_unchained();
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __ReentrancyGuard_init_unchained();
-    }
+    //     __Lib_AddressResolver_init(_libAddressManager);
+    //     __Context_init_unchained();
+    //     __Ownable_init_unchained();
+    //     __Pausable_init_unchained();
+    //     __ReentrancyGuard_init_unchained();
+    // }
 
     /**
      * Pause relaying.

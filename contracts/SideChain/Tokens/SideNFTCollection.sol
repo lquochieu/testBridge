@@ -6,23 +6,19 @@
  */
 pragma solidity 0.8.4;
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 /**
  * @title
  */
-contract SideNFTCollection is
-    ERC721EnumerableUpgradeable,
-    OwnableUpgradeable,
-    PausableUpgradeable
-{
+contract SideNFTCollection is ERC721Enumerable, Ownable, Pausable {
     using SafeMath for uint256;
-    using StringsUpgradeable for uint256;
+    using Strings for uint256;
     using Counters for Counters.Counter;
 
     address internal sideBridge;
@@ -96,17 +92,12 @@ contract SideNFTCollection is
     /*╔══════════════════════════════╗
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
-
-    function initialize(
+    constructor(
         address _sideBridge,
         address _mainCollection,
         string memory name_,
         string memory symbol_
-    ) external initializer {
-        __Pausable_init();
-        __Ownable_init();
-        __ERC721_init(name_, symbol_);
-
+    ) ERC721(name_, symbol_) {
         sideBridge = _sideBridge;
         mainCollection = _mainCollection;
         levelMilestones = [
@@ -122,6 +113,32 @@ contract SideNFTCollection is
             256 days
         ];
     }
+
+    // function initialize(
+    //     address _sideBridge,
+    //     address _mainCollection,
+    //     string memory name_,
+    //     string memory symbol_
+    // ) external initializer {
+    //     __Pausable_init();
+    //     __Ownable_init();
+    //     __ERC721_init(name_, symbol_);
+
+    //     sideBridge = _sideBridge;
+    //     mainCollection = _mainCollection;
+    //     levelMilestones = [
+    //         0,
+    //         1 days,
+    //         2 days,
+    //         4 days,
+    //         8 days,
+    //         16 days,
+    //         32 days,
+    //         64 days,
+    //         128 days,
+    //         256 days
+    //     ];
+    // }
 
     /**
      * Pause relaying.
@@ -143,10 +160,9 @@ contract SideNFTCollection is
         sideBridge = _sideBridge;
     }
 
-    function updateMainNFTCollection(address _mainNFTCollection)
-        external
-        onlyOwner
-    {
+    function updateMainNFTCollection(
+        address _mainNFTCollection
+    ) external onlyOwner {
         mainCollection = _mainNFTCollection;
     }
 
@@ -183,27 +199,24 @@ contract SideNFTCollection is
         return specialTokenId;
     }
 
-    function updateLevelMilestones(uint256[] calldata newMilestones)
-        external
-        onlyBridgeAdmin
-    {
+    function updateLevelMilestones(
+        uint256[] calldata newMilestones
+    ) external onlyBridgeAdmin {
         levelMilestones = newMilestones;
     }
 
-    function mintNFTCollection(address _to, uint256 _collectionId)
-        external
-        whenNotPaused
-        onlyBridgeAdmin
-    {
+    function mintNFTCollection(
+        address _to,
+        uint256 _collectionId
+    ) external whenNotPaused onlyBridgeAdmin {
         _mint(_to, _collectionId);
         emit Mint(_to, _collectionId);
     }
 
-    function burnNFTCollection(address _from, uint256 _collectionId)
-        external
-        onlyBridgeAdmin
-        whenNotPaused
-    {
+    function burnNFTCollection(
+        address _from,
+        uint256 _collectionId
+    ) external onlyBridgeAdmin whenNotPaused {
         _burn(_collectionId);
         emit Burn(_from, _collectionId);
     }
@@ -220,26 +233,26 @@ contract SideNFTCollection is
         _undistributedExperience[_collectionId] += _accruedExperience;
     }
 
-    function changeUniqueURL(uint256 _tokenId, string memory _data)
-        external
-        onlyBridgeAdmin
-    {
+    function changeUniqueURL(
+        uint256 _tokenId,
+        string memory _data
+    ) external onlyBridgeAdmin {
         _uniqueNFTdata[_tokenId] = _data;
     }
 
     mapping(uint256 => uint256) internal uniqueRanks;
 
-    function setUniqueRank(uint256 _tokenId, uint256 _rank)
-        external
-        onlyBridgeAdmin
-    {
+    function setUniqueRank(
+        uint256 _tokenId,
+        uint256 _rank
+    ) external onlyBridgeAdmin {
         uniqueRanks[_tokenId] = _rank;
     }
 
-    function setRarities(uint256 _collectionId, uint256 _rarity)
-        external
-        onlyBridgeAdmin
-    {
+    function setRarities(
+        uint256 _collectionId,
+        uint256 _rarity
+    ) external onlyBridgeAdmin {
         _collectionRarities[_collectionId] = _rarity;
     }
 
@@ -247,11 +260,9 @@ contract SideNFTCollection is
       ║            GETTERS           ║
       ╚══════════════════════════════╝*/
 
-    function getCollectionURL(uint256 _collectionId)
-        external
-        view
-        returns (string memory)
-    {
+    function getCollectionURL(
+        uint256 _collectionId
+    ) external view returns (string memory) {
         return _uniqueNFTdata[_collectionId];
     }
 
@@ -259,11 +270,9 @@ contract SideNFTCollection is
      * @dev Get collection experience
      * @param _collectionId Token ID of collection
      */
-    function getCollectionExperience(uint256 _collectionId)
-        external
-        view
-        returns (uint256)
-    {
+    function getCollectionExperience(
+        uint256 _collectionId
+    ) external view returns (uint256) {
         return
             _initialExperience[_collectionId] +
             _undistributedExperience[_collectionId];
@@ -273,11 +282,9 @@ contract SideNFTCollection is
      * @dev Get collection level
      * @param _collectionId Token ID of collection
      */
-    function getCollectionLevel(uint256 _collectionId)
-        external
-        view
-        returns (uint256)
-    {
+    function getCollectionLevel(
+        uint256 _collectionId
+    ) external view returns (uint256) {
         uint256 collectiveExperience = _initialExperience[_collectionId] +
             _undistributedExperience[_collectionId];
 
@@ -297,11 +304,9 @@ contract SideNFTCollection is
      * @dev Get collection rarity
      * @param collectionId Token ID of collection
      */
-    function viewCollectionRarity(uint256 collectionId)
-        external
-        view
-        returns (uint256)
-    {
+    function viewCollectionRarity(
+        uint256 collectionId
+    ) external view returns (uint256) {
         return _collectionRarities[collectionId];
     }
 
@@ -317,13 +322,9 @@ contract SideNFTCollection is
      * @dev See {IERC721Metadata-tokenURI}.
      */
 
-    function tokenURI(uint256 tokenId)
-        public
-        view
-        virtual
-        override
-        returns (string memory)
-    {
+    function tokenURI(
+        uint256 tokenId
+    ) public view virtual override returns (string memory) {
         require(
             _exists(tokenId),
             "ERC721Metadata: URI query for nonexistent token"

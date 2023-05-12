@@ -1,0 +1,243 @@
+{
+  "manifestVersion": "3.2",
+  "admin": {
+    "address": "0x2110E77215d974C2441eE55C28B361f56dEC287d",
+    "txHash": "0x6791fc0a180f34290d8f632a21f00f214cd11fc998de53600d9dfb4e836f45df"
+  },
+  "proxies": [
+    {
+      "address": "0x4eEA30D77380dAF6Bc3C52914F7b37b69246E6De",
+      "txHash": "0xd0a7983f7f1e9187413ef33189d219feac59843675737228230e16ff6117eeaa",
+      "kind": "transparent"
+    }
+  ],
+  "impls": {
+    "7d6df0f90bd90cd95ebddaa7a6f6627cf23e0fa031f7fe93279df8048653ff89": {
+      "address": "0xE3b8Ca4267EA20A647d6DAf18006250FDE5b1B96",
+      "txHash": "0x459d0efe929f83858d4cfdcf602e06f3946266d04eb7a73327a095f66679c710",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_uint8",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:62",
+            "retypedFrom": "bool"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:67"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:94"
+          },
+          {
+            "label": "_paused",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_bool",
+            "contract": "PausableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:29"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "PausableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:116"
+          },
+          {
+            "label": "_status",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_uint256",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:38"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "ReentrancyGuardUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol:74"
+          },
+          {
+            "label": "messenger",
+            "offset": 0,
+            "slot": "201",
+            "type": "t_address",
+            "contract": "CrossDomainEnabled",
+            "src": "contracts/libraries/bridge/CrossDomainEnabled.sol:8"
+          },
+          {
+            "label": "trava",
+            "offset": 0,
+            "slot": "202",
+            "type": "t_contract(IERC20)990",
+            "contract": "BridgeManager",
+            "src": "contracts/libraries/manager/BridgeManager.sol:9"
+          },
+          {
+            "label": "botAddress",
+            "offset": 0,
+            "slot": "203",
+            "type": "t_address",
+            "contract": "BridgeManager",
+            "src": "contracts/libraries/manager/BridgeManager.sol:12"
+          },
+          {
+            "label": "bridgeFee",
+            "offset": 0,
+            "slot": "204",
+            "type": "t_uint256",
+            "contract": "BridgeManager",
+            "src": "contracts/libraries/manager/BridgeManager.sol:13"
+          },
+          {
+            "label": "admin",
+            "offset": 0,
+            "slot": "205",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "BridgeManager",
+            "src": "contracts/libraries/manager/BridgeManager.sol:16"
+          },
+          {
+            "label": "mainNFTBridge",
+            "offset": 0,
+            "slot": "206",
+            "type": "t_address",
+            "contract": "SideBridge",
+            "src": "contracts/SideChain/SideBridge/SideBridge.sol:21"
+          },
+          {
+            "label": "collections",
+            "offset": 0,
+            "slot": "207",
+            "type": "t_mapping(t_uint256,t_struct(NFTCollection)2171_storage)",
+            "contract": "SideBridge",
+            "src": "contracts/SideChain/SideBridge/SideBridge.sol:39"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_contract(IERC20)990": {
+            "label": "contract IERC20",
+            "numberOfBytes": "20"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(NFTCollection)2171_storage)": {
+            "label": "mapping(uint256 => struct SideBridge.NFTCollection)",
+            "numberOfBytes": "32"
+          },
+          "t_string_storage": {
+            "label": "string",
+            "numberOfBytes": "32"
+          },
+          "t_struct(NFTCollection)2171_storage": {
+            "label": "struct SideBridge.NFTCollection",
+            "members": [
+              {
+                "label": "mainChainId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "collectionRarity",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "collectionId",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "collectionLevel",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "collectionExperience",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "4"
+              },
+              {
+                "label": "collectionRank",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "5"
+              },
+              {
+                "label": "collectionURL",
+                "type": "t_string_storage",
+                "offset": 0,
+                "slot": "6"
+              }
+            ],
+            "numberOfBytes": "224"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          },
+          "t_uint8": {
+            "label": "uint8",
+            "numberOfBytes": "1"
+          }
+        }
+      }
+    }
+  }
+}

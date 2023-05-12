@@ -3,9 +3,7 @@ require("dotenv").config();
 
 async function main() {
   const SideGate = await ethers.getContractFactory("SideGate");
-  const sideGate = await upgrades.deployProxy(SideGate, [
-    process.env.SIDE_LIB_ADDRESS_MANAGER
-  ]);
+  const sideGate = await SideGate.deploy(process.env.SIDE_LIB_ADDRESS_MANAGER);
 
   await sideGate.deployed();
   console.log("SideGate deployed at: ", sideGate.address);

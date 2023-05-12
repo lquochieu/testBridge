@@ -17,25 +17,15 @@ const envAddressContract = [
 ];
 
 const main = async () => {
-  const RandLib_AddressManager = await ethers.getContractFactory(
-    "Lib_AddressManager"
-  );
-  const rdLib_AddressManager = await RandLib_AddressManager.attach(
-    process.env.SIDE_LIB_ADDRESS_MANAGER
-  );
+  const RandLib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
+  const rdLib_AddressManager = await RandLib_AddressManager.attach(process.env.SIDE_LIB_ADDRESS_MANAGER);
   const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(sideOwner);
 
   let setAddress;
-  for (let i = 0; i < addressContract.length; i++) {
-    setAddress = await rdOwnerLib_AddressManager.setAddress(
-      addressContract[i],
-      process.env[envAddressContract[i]]
-    );
+  for(let i = 0; i < addressContract.length; i++) {
+    setAddress = await rdOwnerLib_AddressManager.setAddress(addressContract[i], process.env[envAddressContract[i]], {gasLimit: BigInt(1e7)});
     await setAddress.wait();
-    console.log(
-      addressContract[i],
-      await rdOwnerLib_AddressManager.getAddress(addressContract[i])
-    );
+    console.log(i+3, addressContract[i], await rdOwnerLib_AddressManager.getAddress(addressContract[i]));
   }
 
   setAddress = await rdOwnerLib_AddressManager.setGate(
@@ -67,7 +57,7 @@ const main = async () => {
      */
   const RandSideNFTCollection = await ethers.getContractFactory("SideNFTCollection");
   const rdSideNFTCollection = await RandSideNFTCollection.attach(process.env.SIDE_NFT_COLLECTION);
-  const SideNFTCollection = await rdSideNFTCollection.connect(owner);
+  const SideNFTCollection = await rdSideNFTCollection.connect(sideOwner);
 
   const updateSideBridge = await SideNFTCollection.updateSideBridge(
     process.env.SIDE_BRIDGE
@@ -88,7 +78,7 @@ const main = async () => {
   const rdTransactor = await RandTransactor.attach(
     process.env.SIDE_TRANSACTOR
   );
-  const rdOwnerTransactor = await rdTransactor.connect(owner);
+  const rdOwnerTransactor = await rdTransactor.connect(sideOwner);
 
   const setSigner = await rdOwnerTransactor.setSigners(
     adminKey.publicKey,

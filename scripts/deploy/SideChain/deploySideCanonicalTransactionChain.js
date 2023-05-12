@@ -5,12 +5,12 @@ async function main() {
   const SideCanonicalTransactionChain = await ethers.getContractFactory(
     "SideCanonicalTransactionChain"
   );
-  const sideCanonicalTransactionChain = await upgrades.deployProxy(
-    SideCanonicalTransactionChain,
-    [process.env.SIDE_LIB_ADDRESS_MANAGER]
+  const sideCanonicalTransactionChain = await SideCanonicalTransactionChain.deploy(
+    process.env.SIDE_LIB_ADDRESS_MANAGER
   );
 
   await sideCanonicalTransactionChain.deployed();
+
   console.log(
     "SideCanonicalTransactionChain deployed at: ",
     sideCanonicalTransactionChain.address

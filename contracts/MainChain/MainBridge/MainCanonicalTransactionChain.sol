@@ -5,11 +5,11 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
+import {Lib_AddressResolverUpgradeable} from "../../libraries/resolver/Lib_AddressResolverUpgradeable.sol";
 import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
 contract MainCanonicalTransactionChain is
-    Lib_AddressResolver,
+    Lib_AddressResolverUpgradeable,
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable
@@ -52,7 +52,7 @@ contract MainCanonicalTransactionChain is
             "MainGate already intialized"
         );
 
-        __Lib_AddressResolver_init(_libAddressManager);
+        __Lib_AddressResolverUpgradeable_init(_libAddressManager);
         __Context_init_unchained();
         __Ownable_init_unchained();
         __Pausable_init_unchained();

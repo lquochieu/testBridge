@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title Lib_AddressManager
@@ -11,9 +11,9 @@ import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/se
  */
 
 contract Lib_AddressManager is
-    OwnableUpgradeable,
-    PausableUpgradeable,
-    ReentrancyGuardUpgradeable
+    Ownable,
+    Pausable,
+    ReentrancyGuard
 {
     address internal deployer;
 
@@ -25,19 +25,20 @@ contract Lib_AddressManager is
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
-    function initialize() public initializer {
-        require(
-            deployer == address(0),
-            "Lib_AddressManager already intialized"
-        );
+    // constructor() {}
+    // function initialize() public initializer {
+    //     require(
+    //         deployer == address(0),
+    //         "Lib_AddressManager already intialized"
+    //     );
 
-        deployer = msg.sender;
-        // Initialize upgradable OZ contracts
-        __Context_init_unchained(); // Context is a dependency for both Ownable and Pausable
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __ReentrancyGuard_init_unchained();
-    }
+    //     deployer = msg.sender;
+    //     // Initialize upgradable OZ contracts
+    //     __Context_init_unchained(); // Context is a dependency for both Ownable and Pausable
+    //     __Ownable_init_unchained();
+    //     __Pausable_init_unchained();
+    //     __ReentrancyGuard_init_unchained();
+    // }
 
     /*  ╔══════════════════════════════╗
       ║        ADMIN FUNCTIONS       ║

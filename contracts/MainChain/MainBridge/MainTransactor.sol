@@ -5,7 +5,7 @@ import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/Own
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
+import {Lib_AddressResolverUpgradeable} from "../../libraries/resolver/Lib_AddressResolverUpgradeable.sol";
 import {Signature} from "../../libraries/verify/Signature.sol";
 import {IMainGate} from "../../interfaces/MainChain/MainBridge/IMainGate.sol";
 
@@ -17,7 +17,7 @@ contract MainTransactor is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
-    Lib_AddressResolver
+    Lib_AddressResolverUpgradeable
 {
     mapping(address => bool) public Signers;
 
@@ -45,7 +45,7 @@ contract MainTransactor is
 
         Signers[_msgSender()] = true;
 
-        __Lib_AddressResolver_init(_libAddressManager);
+        __Lib_AddressResolverUpgradeable_init(_libAddressManager);
         __Ownable_init_unchained();
         __Pausable_init_unchained();
         __ReentrancyGuard_init_unchained();

@@ -6,10 +6,9 @@ async function main() {
   /*
     Deploy Side_LibAddressManager.sol
   */
-  let Lib_AddressManager = await ethers.getContractFactory(
-    "Lib_AddressManager"
-  );
-  let lib_AddressManager = await upgrades.deployProxy(Lib_AddressManager, []);
+  let Lib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
+  let lib_AddressManager = await Lib_AddressManager.deploy();
+
   await lib_AddressManager.deployed();
   console.log("Lib_AddressManager deployed at: ", lib_AddressManager.address);
 
@@ -17,9 +16,8 @@ async function main() {
     Deploy SideGate.sol
   */
   const SideGate = await ethers.getContractFactory("SideGate");
-  const sideGate = await upgrades.deployProxy(SideGate, [
-    lib_AddressManager.address,
-  ]);
+  const sideGate = await SideGate.deploy(lib_AddressManager.address);
+
   await sideGate.deployed();
   console.log("SideGate deployed at: ", sideGate.address);
 
@@ -29,7 +27,6 @@ async function main() {
   const SideBridge = await ethers.getContractFactory("SideBridge");
   const sideBridge = await upgrades.deployProxy(SideBridge, [
     sideGate.address,
-    process.env.MAIN_BRIDGE,
     process.env.MAIN_BRIDGE,
     process.env.SIDE_BOT_ADDRESS,
     process.env.SIDE_TRAVA_ADDRESS,
@@ -41,29 +38,28 @@ async function main() {
   /*
     Deploy SideNFTCollection.sol
   */
-  const SideNFTCollection = await ethers.getContractFactory(
-    "SideNFTCollection"
-  );
-  const sideNFTCollection = await upgrades.deployProxy(SideNFTCollection, [
+  const SideNFTCollection = await ethers.getContractFactory("SideNFTCollection");
+  const sideNFTCollection = await SideNFTCollection.deploy(
     sideBridge.address,
     process.env.MAIN_NFT_COLLECTION,
-    "TRAVA",
-    "TRAVA",
-  ]);
+    "TRAVA NFT KNIGHT",
+    "TRAVA"
+  );
+
   await sideNFTCollection.deployed();
   console.log("SideNFTCollection deployed at: ", sideNFTCollection.address);
-
   /*
     Deploy SideCanonicalTransactionChain.sol
   */
   const SideCanonicalTransactionChain = await ethers.getContractFactory(
     "SideCanonicalTransactionChain"
   );
-  const sideCanonicalTransactionChain = await upgrades.deployProxy(
-    SideCanonicalTransactionChain,
-    [lib_AddressManager.address]
+  const sideCanonicalTransactionChain = await SideCanonicalTransactionChain.deploy(
+    lib_AddressManager.address
   );
+
   await sideCanonicalTransactionChain.deployed();
+
   console.log(
     "SideCanonicalTransactionChain deployed at: ",
     sideCanonicalTransactionChain.address
@@ -73,9 +69,8 @@ async function main() {
     Deploy SideTransactor.sol
   */
   const SideTransactor = await ethers.getContractFactory("SideTransactor");
-  const sideTransactor = await upgrades.deployProxy(SideTransactor, [
-    lib_AddressManager.address,
-  ]);
+  const sideTransactor = await SideTransactor.deploy(lib_AddressManager.address);
+
   await sideTransactor.deployed();
   console.log("SideTransactor deployed at: ", sideTransactor.address);
 }

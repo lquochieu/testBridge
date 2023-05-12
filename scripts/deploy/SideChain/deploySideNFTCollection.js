@@ -1,17 +1,17 @@
-const {ethers, upgrades} = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 require("dotenv").config();
 
-async function main () {
-    const SideNFTCollection = await ethers.getContractFactory("SideNFTCollection");
-    const sideNFTCollection = await upgrades.deployProxy(SideNFTCollection, [
-      process.env.SIDE_BRIDGE,
-      process.env.MAIN_NFT_COLLECTION,
-      "TRAVA",
-      "TRAVA"
-    ]);
+async function main() {
+  const SideNFTCollection = await ethers.getContractFactory("SideNFTCollection");
+  const sideNFTCollection = await SideNFTCollection.deploy(
+    process.env.SIDE_BRIDGE,
+    process.env.MAIN_NFT_COLLECTION,
+    "TRAVA NFT KNIGHT",
+    "TRAVA"
+  );
 
-    await sideNFTCollection.deployed();
-    console.log("SideNFTCollection deployed at: ", sideNFTCollection.address);
+  await sideNFTCollection.deployed();
+  console.log("SideNFTCollection deployed at: ", sideNFTCollection.address);
 }
 
 main()
@@ -21,4 +21,3 @@ main()
     process.exit(1);
   });
 
-  

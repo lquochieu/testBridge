@@ -58,7 +58,7 @@ const main = async () => {
   */
   const RandLib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
   const rdLib_AddressManager = await RandLib_AddressManager.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
-  const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(owner);
+  const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(mainOwner);
 
   let setAddress;
   for(let i = 0; i < addressContract.length; i++) {

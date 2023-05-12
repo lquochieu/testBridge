@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+
 import {Lib_AddressResolver} from "../../libraries/resolver/Lib_AddressResolver.sol";
 import {Signature} from "../../libraries/verify/Signature.sol";
 import {ISideGate} from "../../interfaces/SideChain/SideBridge/ISideGate.sol";
@@ -14,9 +15,9 @@ import {ISideGate} from "../../interfaces/SideChain/SideBridge/ISideGate.sol";
  * @notice SideTransactor is a minimal contract that will verify signature from MainChain when user want to claim NFT Collection what was deposited
  */
 contract SideTransactor is
-    OwnableUpgradeable,
-    PausableUpgradeable,
-    ReentrancyGuardUpgradeable,
+    Ownable,
+    Pausable,
+    ReentrancyGuard,
     Lib_AddressResolver
 {
     mapping(address => bool) public Signers;
@@ -27,7 +28,7 @@ contract SideTransactor is
 
     modifier onlyEOA() {
         require(
-            !AddressUpgradeable.isContract(_msgSender()),
+            !Address.isContract(_msgSender()),
             "Account not EOA"
         );
         _;
@@ -36,20 +37,23 @@ contract SideTransactor is
     /*╔══════════════════════════════╗
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
-
-    function initialize(address _libAddressManager) public initializer {
-        require(
-            address(libAddressManager) == address(0),
-            "MainGate already initialized"
-        );
-
+    constructor(address _libAddressManager) Lib_AddressResolver(_libAddressManager) {
         Signers[_msgSender()] = true;
-
-        __Lib_AddressResolver_init(_libAddressManager);
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __ReentrancyGuard_init_unchained();
     }
+    
+    // function initialize(address _libAddressManager) public initializer {
+    //     require(
+    //         address(libAddressManager) == address(0),
+    //         "MainGate already initialized"
+    //     );
+
+    //     Signers[_msgSender()] = true;
+
+    //     __Lib_AddressResolver_init(_libAddressManager);
+    //     __Ownable_init_unchained();
+    //     __Pausable_init_unchained();
+    //     __ReentrancyGuard_init_unchained();
+    // }
 
     /**
      * Pause relaying.

@@ -1,14 +1,12 @@
-const {ethers, upgrades} = require("hardhat");
+const { ethers, upgrades } = require("hardhat");
 require("dotenv").config();
 
-async function main () {
-    const SideTransactor = await ethers.getContractFactory("SideTransactor");
-    const sideTransactor = await upgrades.deployProxy(SideTransactor, [
-      process.env.SIDE_LIB_ADDRESS_MANAGER
-    ]);
+async function main() {
+  const SideTransactor = await ethers.getContractFactory("SideTransactor");
+  const sideTransactor = await SideTransactor.deploy(process.env.SIDE_LIB_ADDRESS_MANAGER);
 
-    await sideTransactor.deployed();
-    console.log("SideTransactor deployed at: ", sideTransactor.address);
+  await sideTransactor.deployed();
+  console.log("SideTransactor deployed at: ", sideTransactor.address);
 }
 
 main()
@@ -18,4 +16,3 @@ main()
     process.exit(1);
   });
 
-  

@@ -4,7 +4,7 @@ require("dotenv").config();
 
 async function main () {
     let Lib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
-    let lib_AddressManager = await upgrades.deployProxy(Lib_AddressManager, []);
+    let lib_AddressManager = await Lib_AddressManager.deploy();
     
     await lib_AddressManager.deployed();
     console.log("Lib_AddressManager deployed at: ", lib_AddressManager.address);

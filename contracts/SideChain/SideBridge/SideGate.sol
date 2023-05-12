@@ -6,18 +6,18 @@ import {Lib_AddressManager} from "../../libraries/resolver/Lib_AddressManager.so
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
 import {Lib_OVMCodec} from "../../libraries/codec/Lib_OVMCodec.sol";
 
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 import {ISideCanonicalTransactionChain} from "../../interfaces/SideChain/SideBridge/ISideCanonicalTransactionChain.sol";
 import {IMainGate} from "../../interfaces/MainChain/MainBridge/IMainGate.sol";
 
 contract SideGate is
     Lib_AddressResolver,
-    OwnableUpgradeable,
-    PausableUpgradeable,
-    ReentrancyGuardUpgradeable
+    Ownable,
+    Pausable,
+    ReentrancyGuard
 {
     address internal xDomainMsgSender;
 
@@ -69,21 +69,24 @@ contract SideGate is
     /*╔══════════════════════════════╗
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
-
-    function initialize(address _libAddressManager) public initializer {
-        require(
-            address(libAddressManager) == address(0),
-            "Side already initialized"
-        );
-
+    constructor(address _libAddressManager) Lib_AddressResolver(_libAddressManager) {
         xDomainMsgSender = Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
-
-        __Lib_AddressResolver_init(_libAddressManager);
-        __Context_init_unchained();
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __ReentrancyGuard_init_unchained();
     }
+
+    // function initialize(address _libAddressManager) public initializer {
+    //     require(
+    //         address(libAddressManager) == address(0),
+    //         "Side already initialized"
+    //     );
+
+    //     xDomainMsgSender = Lib_DefaultValues.DEFAULT_XDOMAIN_SENDER;
+
+    //     __Lib_AddressResolver_init(_libAddressManager);
+    //     __Context_init_unchained();
+    //     __Ownable_init_unchained();
+    //     __Pausable_init_unchained();
+    //     __ReentrancyGuard_init_unchained();
+    // }
 
     /**
      * Pause relaying.

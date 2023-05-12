@@ -59,34 +59,34 @@ const main = async () => {
   const rdSideNFTCollection = await RandSideNFTCollection.attach(process.env.SIDE_NFT_COLLECTION);
   const SideNFTCollection = await rdSideNFTCollection.connect(sideOwner);
 
-  const updateSideBridge = await SideNFTCollection.updateSideBridge(
-    process.env.SIDE_BRIDGE
-  );
-  await updateSideBridge.wait();
-  console.log("SideBridge: ", await SideNFTCollection.getSideBridge());
+  // const updateSideBridge = await SideNFTCollection.updateSideBridge(
+  //   process.env.SIDE_BRIDGE
+  // );
+  // await updateSideBridge.wait();
+  // console.log("SideBridge: ", await SideNFTCollection.getSideBridge());
 
   const registerVault = await SideNFTCollection.registerVault(process.env.SIDE_BRIDGE);
   await registerVault.wait();
-  console.log("registerVaults", registerVault);
+  console.log("registerVaults ok");
 
-  /*
-  Transactor
-*/
-  const RandTransactor = await ethers.getContractFactory(
-    "SideTransactor"
-  );
-  const rdTransactor = await RandTransactor.attach(
-    process.env.SIDE_TRANSACTOR
-  );
-  const rdOwnerTransactor = await rdTransactor.connect(sideOwner);
+//   /*
+//   Transactor
+// */
+//   const RandTransactor = await ethers.getContractFactory(
+//     "SideTransactor"
+//   );
+//   const rdTransactor = await RandTransactor.attach(
+//     process.env.SIDE_TRANSACTOR
+//   );
+//   const rdOwnerTransactor = await rdTransactor.connect(sideOwner);
 
-  const setSigner = await rdOwnerTransactor.setSigners(
-    adminKey.publicKey,
-    true,
-    { gasLimit: BigInt(1e7) }
-  );
+//   const setSigner = await rdOwnerTransactor.setSigners(
+//     adminKey.publicKey,
+//     true,
+//     { gasLimit: BigInt(1e7) }
+//   );
 
-  await setSigner.wait();
+//   await setSigner.wait();
 
   console.log(await rdOwnerTransactor.Signers(adminKey.publicKey));
 };

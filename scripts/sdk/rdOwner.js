@@ -13,7 +13,7 @@ const adminKey = {
 
 const getSideProvider = () => {
     return new ethers.providers.InfuraProvider(
-        "sepolia",
+        "goerli",
         process.env.ABI_KEY
     );
 

@@ -6,18 +6,18 @@ async function main() {
   /*
     Deploy Main_LibAddressManager.sol
   */
-  let Lib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
-  let lib_AddressManager = await Lib_AddressManager.deploy();
+  let Lib_AddressManagerUpgradeable = await ethers.getContractFactory("Lib_AddressManagerUpgradeable");
+  let lib_AddressManagerUpgradeable = await upgrades.deployProxy(Lib_AddressManagerUpgradeable, []);
 
-  await lib_AddressManager.deployed();
-  console.log("Lib_AddressManager deployed at: ", lib_AddressManager.address);
+  await lib_AddressManagerUpgradeable.deployed();
+  console.log("Lib_AddressManagerUpgradeable deployed at: ", lib_AddressManagerUpgradeable.address);
 
   /*
     Deploy MainGate.sol
   */
   const MainGate = await ethers.getContractFactory("MainGate");
   const mainGate = await upgrades.deployProxy(MainGate, [
-    lib_AddressManager.address,
+    lib_AddressManagerUpgradeable.address,
   ]);
   await mainGate.deployed();
   console.log("MainGate deployed at: ", mainGate.address);
@@ -56,7 +56,7 @@ async function main() {
   );
   const mainCanonicalTransactionChain = await upgrades.deployProxy(
     MainCanonicalTransactionChain,
-    [lib_AddressManager.address]
+    [lib_AddressManagerUpgradeable.address]
   );
   await mainCanonicalTransactionChain.deployed();
   console.log(
@@ -69,7 +69,7 @@ async function main() {
   */
   const MainTransactor = await ethers.getContractFactory("MainTransactor");
   const mainTransactor = await upgrades.deployProxy(MainTransactor, [
-    lib_AddressManager.address,
+    lib_AddressManagerUpgradeable.address,
   ]);
   await mainTransactor.deployed();
   console.log("MainTransactor deployed at: ", mainTransactor.address);

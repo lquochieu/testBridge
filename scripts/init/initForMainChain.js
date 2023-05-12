@@ -54,26 +54,26 @@ const main = async () => {
   );
 
   /*
-    Lib_AddressManager
+    Lib_AddressManagerUpgradeable
   */
-  const RandLib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
-  const rdLib_AddressManager = await RandLib_AddressManager.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
-  const rdOwnerLib_AddressManager = await rdLib_AddressManager.connect(mainOwner);
+  const RandLib_AddressManagerUpgradeable = await ethers.getContractFactory("Lib_AddressManagerUpgradeable");
+  const rdLib_AddressManagerUpgradeable = await RandLib_AddressManagerUpgradeable.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
+  const rdOwnerLib_AddressManagerUpgradeable = await rdLib_AddressManagerUpgradeable.connect(mainOwner);
 
   let setAddress;
   for(let i = 0; i < addressContract.length; i++) {
-    setAddress = await rdOwnerLib_AddressManager.setAddress(addressContract[i], process.env[envAddressContract[i]], {gasLimit: BigInt(1e7)});
+    setAddress = await rdOwnerLib_AddressManagerUpgradeable.setAddress(addressContract[i], process.env[envAddressContract[i]], {gasLimit: BigInt(1e7)});
     await setAddress.wait();
-    console.log(i+3, addressContract[i], await rdOwnerLib_AddressManager.getAddress(addressContract[i]));
+    console.log(i+3, addressContract[i], await rdOwnerLib_AddressManagerUpgradeable.getAddress(addressContract[i]));
   }
 
-  setAddress = await rdOwnerLib_AddressManager.setGate(process.env.ETH_CHAIN_ID, process.env.SIDE_GATE);
+  setAddress = await rdOwnerLib_AddressManagerUpgradeable.setGate(process.env.ETH_CHAIN_ID, process.env.SIDE_GATE);
   await setAddress.wait();
-  console.log("SIDE_GATE = ", await rdOwnerLib_AddressManager.getGateAddress(process.env.ETH_CHAIN_ID));
+  console.log("SIDE_GATE = ", await rdOwnerLib_AddressManagerUpgradeable.getGateAddress(process.env.ETH_CHAIN_ID));
 
-  setAddress = await rdOwnerLib_AddressManager.setTransactor(process.env.ETH_CHAIN_ID, process.env.SIDE_TRANSACTOR);
+  setAddress = await rdOwnerLib_AddressManagerUpgradeable.setTransactor(process.env.ETH_CHAIN_ID, process.env.SIDE_TRANSACTOR);
   await setAddress.wait();
-  console.log("SIDE_TRANSACTOR = ", await rdOwnerLib_AddressManager.getTransactorAddress(process.env.ETH_CHAIN_ID));
+  console.log("SIDE_TRANSACTOR = ", await rdOwnerLib_AddressManagerUpgradeable.getTransactorAddress(process.env.ETH_CHAIN_ID));
 
   // /*
   //   NFTCollection

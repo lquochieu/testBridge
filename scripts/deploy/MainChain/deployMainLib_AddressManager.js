@@ -3,11 +3,11 @@ const {ethers, upgrades} = require("hardhat");
 require("dotenv").config();
 
 async function main () {
-    let Lib_AddressManager = await ethers.getContractFactory("Lib_AddressManager");
-    let lib_AddressManager = await Lib_AddressManager.deploy();
+    let Lib_AddressManagerUpgradeable = await ethers.getContractFactory("Lib_AddressManagerUpgradeable");
+    let lib_AddressManagerUpgradeable = await upgrades.deployProxy(Lib_AddressManagerUpgradeable, []);
     
-    await lib_AddressManager.deployed();
-    console.log("Lib_AddressManager deployed at: ", lib_AddressManager.address);
+    await lib_AddressManagerUpgradeable.deployed();
+    console.log("Lib_AddressManagerUpgradeable deployed at: ", lib_AddressManagerUpgradeable.address);
 }
 
 main()

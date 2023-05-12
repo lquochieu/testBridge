@@ -6,8 +6,8 @@ import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/Addr
 import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
-import {BridgeManager} from "../../libraries/manager/BridgeManager.sol";
+import {CrossDomainEnabledUpgradeable} from "../../libraries/bridge/CrossDomainEnabledUpgradeable.sol";
+import {BridgeManagerUpgradable} from "../../libraries/manager/BridgeManagerUpgradable.sol";
 import {IMainNFTCollection} from "../../interfaces/MainChain/Tokens/IMainNFTCollection.sol";
 import {ISideBridge} from "../../interfaces/SideChain/SideBridge/ISideBridge.sol";
 import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
@@ -16,8 +16,8 @@ contract MainBridge is
     OwnableUpgradeable,
     PausableUpgradeable,
     ReentrancyGuardUpgradeable,
-    CrossDomainEnabled,
-    BridgeManager
+    CrossDomainEnabledUpgradeable,
+    BridgeManagerUpgradable
 {
     /**
      * @param chainId chainId of SideChain
@@ -88,8 +88,8 @@ contract MainBridge is
     ) public initializer {
         require(messenger == address(0), "Contract already initialize");
 
-        __CrossDomainEnabled_init(_MainGate);
-        __BridgeManager_init(_botAddress, _travaAddress, _bridgeFee);
+        __CrossDomainEnabledUpgradeable_init(_MainGate);
+        __BridgeManagerUpgradable_init(_botAddress, _travaAddress, _bridgeFee);
 
         __Context_init_unchained();
         __Ownable_init_unchained();
@@ -291,7 +291,7 @@ contract MainBridge is
         address _to,
         uint256 _collectionId,
         bytes calldata _data
-    ) external onlyFromCrossDomainAccount(sideNFTBridges[_sideChainId]) {
+    ) external onlyFromCrossDomainAccount(sideNFTBridges[_sideChainId]) whenNotPaused {
         // ) external {
 
         require(

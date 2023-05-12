@@ -1,17 +1,15 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ICrossDomainMessenger.sol";
 
-contract CrossDomainEnabled {
+contract CrossDomainEnabledUpgradeable is Initializable {
     address public messenger;
 
-    constructor(address _messenger) {
+    function __CrossDomainEnabledUpgradeable_init(address _messenger) internal onlyInitializing {
         messenger = _messenger;
     }
-    // function __CrossDomainEnabled_init(address _messenger) internal onlyInitializing {
-    //     messenger = _messenger;
-    // }
 
     modifier onlyFromCrossDomainAccount(address _sourceDomainAccount) {
         require(

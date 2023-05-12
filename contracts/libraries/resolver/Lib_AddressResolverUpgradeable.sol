@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import {Lib_AddressManager} from "./Lib_AddressManager.sol";
+import "./Lib_AddressManagerUpgradeable.sol";
 
 /**
  * @title Lib_AddressResolver
@@ -10,13 +10,13 @@ import {Lib_AddressManager} from "./Lib_AddressManager.sol";
  */
 abstract contract Lib_AddressResolverUpgradeable is Initializable {
     
-    Lib_AddressManager public libAddressManager;
+    Lib_AddressManagerUpgradeable public libAddressManager;
 
     function __Lib_AddressResolverUpgradeable_init(address _libAddressManager)
         internal
         onlyInitializing
     {
-        libAddressManager = Lib_AddressManager(_libAddressManager);
+        libAddressManager = Lib_AddressManagerUpgradeable(_libAddressManager);
     }
 
     /**

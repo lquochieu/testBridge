@@ -25,13 +25,13 @@ async function main() {
     Deploy SideBridge.sol
   */
   const SideBridge = await ethers.getContractFactory("SideBridge");
-  const sideBridge = await upgrades.deployProxy(SideBridge, [
+  const sideBridge = await SideBridge.deploy(
     sideGate.address,
     process.env.MAIN_BRIDGE,
     process.env.SIDE_BOT_ADDRESS,
     process.env.SIDE_TRAVA_ADDRESS,
     process.env.SIDE_BRIDGE_FEE
-  ]);
+  );
   await sideBridge.deployed();
   console.log("SideBridge deployed at: ", sideBridge.address);
 

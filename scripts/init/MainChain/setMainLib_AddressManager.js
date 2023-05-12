@@ -6,7 +6,7 @@ require("dotenv").config();
 const addressContract = ["MainBridge", "MainCanonicalTransactionChain", "MainGate", "MainTransactor"];
 const envAddressContract = ["MAIN_BRIDGE", "MAIN_CANONICAL_TRANSACTION_CHAIN", "MAIN_GATE", "MAIN_TRANSACTOR"];
 const main = async () => {
-  const Rand = await ethers.getContractFactory("Lib_AddressManager");
+  const Rand = await ethers.getContractFactory("Lib_AddressManagerUpgradeable");
   const rd = await Rand.attach(process.env.MAIN_LIB_ADDRESS_MANAGER);
   const rdOwner = await rd.connect(mainOwner);
 

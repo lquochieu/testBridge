@@ -1,20 +1,20 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {AddressUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
-import {ReentrancyGuardUpgradeable} from "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import {PausableUpgradeable} from "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import {OwnableUpgradeable} from "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import {ISideNFTCollection} from "../../interfaces/SideChain/Tokens/ISideNFTCollection.sol";
-import {IMainBridge} from "../../interfaces/MainChain/MainBridge/IMainBridge.sol";
-import {CrossDomainEnabled} from "../../libraries/bridge/CrossDomainEnabled.sol";
-import {BridgeManager} from "../../libraries/manager/BridgeManager.sol";
-import {Lib_DefaultValues} from "../../libraries/constant/Lib_DefaultValues.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "../../interfaces/SideChain/Tokens/ISideNFTCollection.sol";
+import "../../interfaces/MainChain/MainBridge/IMainBridge.sol";
+import "../../libraries/bridge/CrossDomainEnabled.sol";
+import "../../libraries/manager/BridgeManager.sol";
+import "../../libraries/constant/Lib_DefaultValues.sol";
 
 contract SideBridge is
-    OwnableUpgradeable,
-    PausableUpgradeable,
-    ReentrancyGuardUpgradeable,
+    Ownable,
+    Pausable,
+    ReentrancyGuard,
     CrossDomainEnabled,
     BridgeManager
 {
@@ -75,7 +75,7 @@ contract SideBridge is
       ╚══════════════════════════════╝*/
     modifier onlyEOA() {
         require(
-            !AddressUpgradeable.isContract(_msgSender()),
+            !Address.isContract(_msgSender()),
             "Account not EOA"
         );
         _;
@@ -85,28 +85,37 @@ contract SideBridge is
       ║          CONSTRUCTOR         ║
       ╚══════════════════════════════╝*/
 
-    function initialize(
+    constructor(
         address _SideGate, 
         address _mainNFTBridge,
         address _botAddress,
         address _travaAddress,
         uint256 _bridgeFee
-    )
-        public
-        initializer
-    {
-        require(messenger == address(0), "Contract already initialize");
-
+    ) CrossDomainEnabled(_SideGate) BridgeManager(_botAddress, _travaAddress, _bridgeFee) {
         mainNFTBridge = _mainNFTBridge;
-
-        __CrossDomainEnabled_init(_SideGate);
-        __BridgeManager_init(_botAddress, _travaAddress, _bridgeFee);
-
-        __Context_init_unchained();
-        __Ownable_init_unchained();
-        __Pausable_init_unchained();
-        __ReentrancyGuard_init_unchained();
     }
+    // function initialize(
+    //     address _SideGate, 
+    //     address _mainNFTBridge,
+    //     address _botAddress,
+    //     address _travaAddress,
+    //     uint256 _bridgeFee
+    // )
+    //     public
+    //     initializer
+    // {
+    //     require(messenger == address(0), "Contract already initialize");
+
+    //     mainNFTBridge = _mainNFTBridge;
+
+    //     __CrossDomainEnabled_init(_SideGate);
+    //     __BridgeManager_init(_botAddress, _travaAddress, _bridgeFee);
+
+    //     __Context_init_unchained();
+    //     __Ownable_init_unchained();
+    //     __Pausable_init_unchained();
+    //     __ReentrancyGuard_init_unchained();
+    // }
 
     /**
      * Pause relaying.

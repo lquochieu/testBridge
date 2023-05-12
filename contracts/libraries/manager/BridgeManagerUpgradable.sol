@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-contract BridgeManager is Ownable {
+contract BridgeManagerUpgradable is Initializable, OwnableUpgradeable {
     IERC20 internal trava;
 
     // receiver bridge fee address
@@ -14,31 +15,20 @@ contract BridgeManager is Ownable {
     // address of admin to use admin functions
     mapping(address => bool) internal admin;
 
-    constructor(
+    function __BridgeManagerUpgradable_init(
         address _botAddress,
         address _travaAddress,
         uint256 _bridgeFee
-    ) {
+    ) internal onlyInitializing {
+
         admin[msg.sender] = true;
 
         botAddress = _botAddress;
         trava = IERC20(_travaAddress);
         bridgeFee = _bridgeFee;
+
+        __Ownable_init_unchained();
     }
-    // function __BridgeManager_init(
-    //     address _botAddress,
-    //     address _travaAddress,
-    //     uint256 _bridgeFee
-    // ) internal onlyInitializing {
-
-    //     admin[msg.sender] = true;
-
-    //     botAddress = _botAddress;
-    //     trava = IERC20(_travaAddress);
-    //     bridgeFee = _bridgeFee;
-
-    //     __Ownable_init_unchained();
-    // }
 
     modifier onlyAdmin() {
         require(admin[msg.sender], "UNAUTHORIZED");

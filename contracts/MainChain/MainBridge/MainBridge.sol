@@ -213,7 +213,7 @@ contract MainBridge is
         );
 
         require(
-            _msgSender() == mainNFTCollection.ownerOf(_collectionId),
+            _msgSender() == mainNFTCollection.ownerOf(_collectionId) && _to == _msgSender(),
             "Incorect owner"
         );
 

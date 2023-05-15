@@ -37,7 +37,7 @@ contract MainBridge is
 
     mapping(uint256 => address) internal sideNFTBridges;
     mapping(uint256 => mapping(address => mapping(address => bool)))
-        internal supportsNFTCollections;
+    internal supportsNFTCollections;
 
     /*╔══════════════════════════════╗
       ║            EVENTS            ║
@@ -61,7 +61,16 @@ contract MainBridge is
         uint256 _collectionId,
         bytes _data
     );
+    
+    event WithdrawBatchNFTCollectionEmergengyFinalized(
+        uint256[] collectionId,
+        address[] mainNFTCollection 
+    );
 
+    event WithdrawNFTCollectionEmergengyFinalized(
+        uint256 collectionId,
+        address mainNFTCollection 
+    );
     /*╔══════════════════════════════╗
       ║           MODIFIER           ║
       ╚══════════════════════════════╝*/
@@ -134,7 +143,27 @@ contract MainBridge is
         ] = isSupport;
     }
 
+    function withdrawBatchNFTCollectionEmergency(
+        uint256[] memory _collectionId,
+        address[] memory _mainNFTCollection
+    ) public onlyOwner {
+        uint256 length = _collectionId.length;
+        require(length == _mainNFTCollection.length, "invalid the number of NFTCollection");
 
+        for(uint256 i; i < length; i++) {
+            _claimNFTCollection(_mainNFTCollection[i], _collectionId[i]);
+        }
+
+        emit WithdrawBatchNFTCollectionEmergengyFinalized(_collectionId, _mainNFTCollection);
+    }
+
+    function withdrawNFTCollectionEmergency(
+        uint256 _collectionId,
+        address _mainNFTCollection
+    ) public onlyOwner {
+        _claimNFTCollection(_mainNFTCollection, _collectionId);
+        emit WithdrawNFTCollectionEmergengyFinalized(_collectionId, _mainNFTCollection);
+    }
     /*  ╔══════════════════════════════╗
       ║    Deposit NFT Collection      ║
       ╚══════════════════════════════╝ */
@@ -326,7 +355,10 @@ contract MainBridge is
         address _mainNFTCollection,
         uint256 _collectionId
     ) internal {
-        IMainNFTCollection(_mainNFTCollection).transferFrom(
+        IMainNFTCollection mainNFTCollection = IMainNFTCollection(_mainNFTCollection);
+        require(mainNFTCollection.ownerOf(_collectionId) == address(this), "bridge is not contain this NFT collection");
+
+        mainNFTCollection.transferFrom(
             address(this),
             tx.origin,
             _collectionId

@@ -289,7 +289,7 @@ contract SideBridge is
         );
 
         require(
-            _msgSender() == sideNFTCollection.ownerOf(_collectionId),
+            _msgSender() == sideNFTCollection.ownerOf(_collectionId) && _msgSender() == _to,
             "Only Owner can withdraw NFT"
         );
 
